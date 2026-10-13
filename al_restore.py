@@ -1073,9 +1073,9 @@ def gui():
     ttk.Checkbutton(f3, text="导出表情差分", variable=v_face).grid(
         row=1, column=1, sticky="w", padx=(14, 0), pady=(6, 0))
     ttk.Checkbutton(f3, text="表情贴图自动对齐（推荐）", variable=v_align).grid(
-        row=1, column=2, sticky="w", padx=(14, 0), pady=(6, 0))
+        row=2, column=0, sticky="w", pady=(6, 0))
     ttk.Label(f3, text="小技巧: 先在上面的搜索框输入关键词(如 aerbien) → 点「全选(当前列表)」→ 就只还原这一批",
-              foreground="#888").grid(row=2, column=0, columnspan=2, sticky="w", pady=(6, 0))
+              foreground="#888").grid(row=3, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
     # ------------------------------------------------------------- 4. 运行
     f4 = ttk.Frame(root, padding=(10, 0))
