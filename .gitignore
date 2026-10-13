@@ -1,0 +1,24 @@
+# 运行产生的临时文件 / 本机路径，不要提交
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 工具记住的本机素材路径 & 生成的清单
+素材路径.txt
+素材缺失清单.txt
+
+# 输出
+output/
+还原输出/
+分层输出/
+*.png
+*.jpg
+!docs/*.png
+
+# 编辑器的东西
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
