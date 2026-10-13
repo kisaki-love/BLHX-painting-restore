@@ -187,7 +187,8 @@ AssetBundles\
 </p>
 
 - 图层拼图的思路参考了开源项目
-  [AzurLanePaintingExtract](https://github.com/azurlane-doujin/AzurLanePaintingExtract) 与 ALPA；
+  [ALPA（AzurLanePaintingAnalysis-Kt）](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)，
+  输出的 `_exp.png` 文件名也与它保持兼容；
   布局规则由本项目独立逆向验证（用官方宣传图逐像素比对）。
 
 ## 贡献者
