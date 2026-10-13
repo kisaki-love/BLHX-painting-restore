@@ -17,7 +17,7 @@ if not defined PYEXE if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.e
 if not defined PYEXE for /f "delims=" %%i in ('where python 2^>nul') do if not defined PYEXE set "PYEXE=%%i"
 
 if not defined PYEXE (
-  echo [ERROR] 没找到 Python。请先装 Python 3.8+ : https://www.python.org/downloads/
+  echo [ERROR] 没找到 Python。请先装 Python 3.10+ : https://www.python.org/downloads/
   echo         安装时记得勾选 "Add python.exe to PATH"。
   pause
   exit /b 1

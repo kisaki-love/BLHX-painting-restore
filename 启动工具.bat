@@ -12,7 +12,7 @@ if not defined PYEXE for /f "delims=" %%i in ('where python 2^>nul') do if not d
 
 if not defined PYEXE (
   echo [ERROR] Python not found.
-  echo Please install Python 3.8+ from https://www.python.org/downloads/
+  echo Please install Python 3.10+ from https://www.python.org/downloads/
   echo Remember to check "Add python.exe to PATH" during install.
   pause
   exit /b 1
