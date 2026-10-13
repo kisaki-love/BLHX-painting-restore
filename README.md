@@ -180,8 +180,12 @@ AssetBundles\
 
 ## 致谢
 
-- **DeepSeek-V4.1-Flash** —— 本项目的代码由该大模型协助编写（图层定位规则逆向、全库批量验证、
-  文档整理等）。
+<p align="center">
+  <img src="docs/deepseek_q.png" width="120" alt="DeepSeek 鲸鱼标志"><br>
+  <b>DeepSeek-V4.1-Flash</b><br>
+  <sub>本项目的代码由该大模型协助编写（图层定位规则逆向、全库批量验证、文档整理等）</sub>
+</p>
+
 - 图层拼图的思路参考了开源项目
   [AzurLanePaintingExtract](https://github.com/azurlane-doujin/AzurLanePaintingExtract) 与 ALPA；
   布局规则由本项目独立逆向验证（用官方宣传图逐像素比对）。
