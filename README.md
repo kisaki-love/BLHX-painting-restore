@@ -193,7 +193,7 @@ AssetBundles\
 
 ## 贡献者
 
-- [Tsukiyashirokisaki (@SOLASOLAdesu)](https://github.com/SOLASOLAdesu)
+- [Tsukiyashirokisaki (@Tsukiyashirokisakilove)](https://github.com/Tsukiyashirokisakilove)
 
 欢迎提 Issue / PR。
 
