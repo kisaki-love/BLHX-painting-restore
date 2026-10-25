@@ -70,7 +70,7 @@ except Exception:          # pragma: no cover
 # ----------------------------------------------------------------------------
 # 常量
 # ----------------------------------------------------------------------------
-VERSION = "1.0.2"
+VERSION = "1.1"
 APP_TITLE = "碧蓝航线 · 静态立绘还原工具"
 
 Y_BIAS = 1  # 与官方还原结果对齐的 1 像素纵向补偿(实测)
@@ -328,7 +328,7 @@ def read_prefab(ab_path: str, name: str) -> PaintingPrefab:
                 # 表情框: 绝大多数立绘这里 Sprite 为空(脸已经画在 rw 图层里);
                 # 但新立绘会引用 paintingface/<立绘名> 里的默认表情 —— 此时 rw 图层
                 # 在脸部是**挖空**的, 必须把这张默认表情贴回去, 否则成品脸上是个
-                # 大白框(其实是透出背景层)。见 CHANGELOG v1.0.1。
+                # 大白框(其实是透出背景层)。见 CHANGELOG v1.1。
                 if res.face_rect is None and rect is not None:
                     res.face_rect = rect
                 if sp_pid and not res.face_sprite_pid:
