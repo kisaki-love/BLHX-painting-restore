@@ -26,6 +26,10 @@
    表情差分: paintingface/<立绘名> 里是若干张 (271x202 之类) 面部贴图,
    贴到 Prefab 中名为 "face" 的节点矩形上, 就得到 <立绘名>_exp_N.png.
 
+   注意: 新立绘的人物层在脸部是**挖空**的, face 节点引用了 paintingface 里的
+   0 号表情(默认脸), 必须把它也贴回去, 否则成品脸上是一块纯色方块(透出背景).
+   老立绘的脸画在人物层里, face 节点的 Sprite 为空, 这时不补(否则会重影).
+
 依赖: pillow, numpy, UnityPy
 用法: 见 启动工具.bat / README.md
 """
@@ -66,7 +70,7 @@ except Exception:          # pragma: no cover
 # ----------------------------------------------------------------------------
 # 常量
 # ----------------------------------------------------------------------------
-VERSION = "1.0.0"
+VERSION = "1.0.2"
 APP_TITLE = "碧蓝航线 · 静态立绘还原工具"
 
 Y_BIAS = 1  # 与官方还原结果对齐的 1 像素纵向补偿(实测)
@@ -237,6 +241,10 @@ class PaintingPrefab:
         self.canvas = (0, 0)
         self.layers = []      # [{name, rect, raw, order}]
         self.face_rect = None # (ox, oy, w, h)
+        # face 节点引用的 Sprite(默认表情)的 PathID; 0 = 老立绘, 脸直接画在图层里
+        self.face_sprite_pid = 0
+        # face 节点在层级里的位置(tuple(order)): 用来找它下面那层, 判断脸部是不是洞
+        self.face_order = None
 
     def __repr__(self):
         return f"<PaintingPrefab {self.name} canvas={self.canvas} layers={[l['name'] for l in self.layers]}>"
@@ -315,14 +323,22 @@ def read_prefab(ab_path: str, name: str) -> PaintingPrefab:
             if not isinstance(m, dict) or "m_Sprite" not in m or "m_AnchoredPosition" in m:
                 continue
             sp = m.get("m_Sprite") or {}
+            sp_pid = int(sp.get("m_PathID", 0) or 0)
             if nm == "face":
-                # 表情框: 基础包里 Sprite 通常为空, 但矩形有效, 需要记录
+                # 表情框: 绝大多数立绘这里 Sprite 为空(脸已经画在 rw 图层里);
+                # 但新立绘会引用 paintingface/<立绘名> 里的默认表情 —— 此时 rw 图层
+                # 在脸部是**挖空**的, 必须把这张默认表情贴回去, 否则成品脸上是个
+                # 大白框(其实是透出背景层)。见 CHANGELOG v1.0.1。
                 if res.face_rect is None and rect is not None:
                     res.face_rect = rect
+                if sp_pid and not res.face_sprite_pid:
+                    res.face_sprite_pid = sp_pid
+                if res.face_order is None:
+                    res.face_order = tuple(order)
                 continue
             if LAYER_NAME_BAN.match(str(nm or "")):
                 continue
-            if sp.get("m_PathID", 0) == 0:      # 空 Sprite
+            if sp_pid == 0:                     # 空 Sprite
                 continue
             raw = m.get("mRawSpriteSize") or {}
             rec = {
@@ -335,10 +351,8 @@ def read_prefab(ab_path: str, name: str) -> PaintingPrefab:
                 # 该图层引用的 Sprite 的 PathID: 用于在"图层名对不上包名"时
                 # (典型: _hx / _asmr 变体的主图层, 贴图仍复用基础立绘的 _tex 包)
                 # 校验候选包里的 Sprite 是否真的是同一个资源。
-                "sprite_pid": int(sp.get("m_PathID", 0) or 0),
+                "sprite_pid": sp_pid,
             }
-            if nm == "face":
-                res.face_rect = rect
             res.layers.append(rec)
 
         if rects:
@@ -413,6 +427,30 @@ def _has_sprite(ab_path, path_id):
     return False
 
 
+def _typo_tex_path(painting_dir, layer_name, sprite_pid):
+    """图层名拼错时的兜底: 找"字母相同、顺序不同"的 <名字>_tex, 再用 Sprite PathID 校验。
+
+    游戏数据里偶有这种拼写错位: 图层名 `leiyibeier_2_rw` 对应的包其实叫
+    `leiyierbei_2_rw_tex`。要求字符集合与长度完全一致(等价于"字母顺序打乱"),
+    并且包里确实含该图层的 Sprite, 才认 —— 不通过就不猜。
+    """
+    want = "".join(sorted(layer_name.lower()))
+    try:
+        for f in sorted(os.listdir(painting_dir)):
+            fl = f.lower()
+            if not fl.endswith("_tex"):
+                continue
+            stem = fl[:-4]
+            if len(stem) != len(want) or "".join(sorted(stem)) != want:
+                continue
+            p = os.path.join(painting_dir, f)
+            if _has_sprite(p, sprite_pid):
+                return p
+    except OSError:
+        pass
+    return None
+
+
 def load_layer_assets(painting_dir: str, layer_name: str, prefab_name: str,
                       sprite_pid: int | None = None):
     """在 painting 目录里找到某图层的 _tex 包, 返回 (Texture2D->PIL, obj文本, sprite矩形)。
@@ -457,6 +495,9 @@ def load_layer_assets(painting_dir: str, layer_name: str, prefab_name: str,
                     break
             if ab:
                 break
+    if ab is None and sprite_pid:
+        # 图层名拼写错位(leiyibeier_2_rw ↔ leiyierbei_2_rw_tex)
+        ab = _typo_tex_path(painting_dir, layer_name, int(sprite_pid))
     if ab is None:
         return None, None, None
 
@@ -511,11 +552,87 @@ def sprite_crop(tex: Image.Image, srect):
 # ============================================================================
 # 四、合成
 # ============================================================================
+def layer_bitmap(pf: PaintingPrefab, painting_dir: str, L: dict):
+    """还原单个图层, 返回 (已缩放的图层图, 画布左上角 x, y); 取不到素材返回 None。"""
+    if L["rect"] is None:
+        return None
+    ox, oy, w, h = L["rect"]
+    if w <= 0 or h <= 0:
+        return None
+    tex, obj, srect = load_layer_assets(painting_dir, L["name"], pf.name,
+                                        L.get("sprite_pid"))
+    if tex is None:
+        return None
+
+    # 1) 有 Mesh -> 拼图; 无 Mesh -> 贴图本身就是完整图(可能需按 Sprite 裁剪)
+    meta = {}
+    lay = restore_layer(tex, obj, meta) if obj else None
+    rw, rh = L["raw"]
+    if rw > 0 and rh > 0:
+        sw, sh = w / rw, h / rh
+    else:
+        sw, sh = 1.0, 1.0
+
+    if lay is None:                       # 无 Mesh: 贴图/裁剪结果已是「画布单位」的原稿
+        lay = sprite_crop(tex, srect)
+        ytop = float(h)                   # 直接按矩形高度贴(不要再乘 sh, 否则会被推飞出画布)
+    else:
+        # mesh 顶点是「图层原稿」的像素坐标, 原点(0,0) 就是该 Image 矩形的左下角,
+        # 原点之上 ymax 处是图像顶边。所以必须用 ymax 定位, 而不是矩形高度:
+        # 多数图层 ymax≈mRawSpriteSize.y, 与旧公式只差 1~4 像素(看不出来);
+        # 少数图层(baifeng_rw 差 447px, baifeng_bj 差 684px)会整段错位。
+        ytop = float(meta.get("ymax", h)) * sh
+
+    # 2) 缩放到 RectTransform 给出的矩形尺寸
+    dw, dh = int(round(lay.width * sw)), int(round(lay.height * sh))
+    if (dw, dh) != lay.size and dw > 0 and dh > 0:
+        lay = lay.resize((dw, dh), Image.BILINEAR)
+
+    # 3) 画布左上角坐标 (Unity y 向上 -> PIL y 向下)
+    #    ytop = mesh 原点(即矩形左下角)到图像顶边的距离, 它可能大于 rect 高度
+    #    (图层原稿比矩形大, 例如 baifeng_rw / baifeng_bj), 必须按它定位。
+    x = int(round(ox))
+    y = int(round(pf.canvas[1] - oy - ytop)) + Y_BIAS
+    return lay, x, y
+
+
+def _probe_hole(pf: PaintingPrefab, probe: dict, L: dict, lay, x, y):
+    """合成过程中顺手判断"这个图层在 face 矩形处是不是挖了洞"(不额外拼图)。
+
+    判据: 该层在 face 矩形内几乎全透明, 而紧贴矩形外 8px 的一圈明显有内容。
+    """
+    if probe.get("hole") or pf.face_rect is None or pf.face_order is None:
+        return
+    if L["order"] >= pf.face_order:        # 只看 face 节点下面的图层
+        return
+    fx, fy, fw, fh = pf.face_rect
+    fw, fh = int(round(fw)), int(round(fh))
+    if fw < 8 or fh < 8:
+        return
+    pad = 8
+    a = np.asarray(lay.getchannel("A"), dtype=np.float32)
+    if float(a.mean()) < 40:               # 该层本身几乎没内容, 判不了
+        return
+    u0, v0 = int(round(fx)) - x, int(round(pf.canvas[1] - fy - fh)) - y
+    inner = a[max(0, v0):max(0, v0 + fh), max(0, u0):max(0, u0 + fw)]
+    outer = a[max(0, v0 - pad):max(0, v0 + fh + pad),
+              max(0, u0 - pad):max(0, u0 + fw + pad)]
+    if inner.size < 100 or outer.size <= inner.size:
+        return
+    in_m = float(inner.mean())
+    ring = (float(outer.sum()) - float(inner.sum())) / (outer.size - inner.size)
+    if in_m < 40.0 and ring > max(30.0, 3 * in_m):
+        probe["hole"] = True
+        probe["hole_layer"] = L["name"]
+
+
 def composite(pf: PaintingPrefab, painting_dir: str, face_img: Image.Image | None = None,
-              face_offset=(0, 0)):
+              face_offset=(0, 0), probe: dict | None = None):
     """把某立绘的所有图层合成为一张完整立绘。
 
     face_offset: 表情贴图相对 face 节点的额外偏移(由 align_face 得出)
+    probe      : 传入 dict 则顺手检测"脸部是不是挖空的", 结果写入 probe["hole"]
+                 (见 face_is_hole; 复用这一步就不用为了判定再合成一遍)
     """
     C = pf.canvas
     canvas = Image.new("RGBA", C, (255, 255, 255, 0))
@@ -524,46 +641,14 @@ def composite(pf: PaintingPrefab, painting_dir: str, face_img: Image.Image | Non
     for L in pf.layers:
         if L["name"] == "face":
             continue                     # 表情单独处理
-        if L["rect"] is None:
+        r = layer_bitmap(pf, painting_dir, L)
+        if r is None:
+            if L["rect"] is not None and L["rect"][2] > 0 and L["rect"][3] > 0:
+                missing.append(L["name"])
             continue
-        ox, oy, w, h = L["rect"]
-        if w <= 0 or h <= 0:
-            continue
-        tex, obj, srect = load_layer_assets(painting_dir, L["name"], pf.name,
-                                            L.get("sprite_pid"))
-        if tex is None:
-            missing.append(L["name"])
-            continue
-
-        # 1) 有 Mesh -> 拼图; 无 Mesh -> 贴图本身就是完整图(可能需按 Sprite 裁剪)
-        meta = {}
-        lay = restore_layer(tex, obj, meta) if obj else None
-        rw, rh = L["raw"]
-        if rw > 0 and rh > 0:
-            sw, sh = w / rw, h / rh
-        else:
-            sw, sh = 1.0, 1.0
-
-        if lay is None:                       # 无 Mesh: 贴图/裁剪结果已是「画布单位」的原稿
-            lay = sprite_crop(tex, srect)
-            ytop = float(h)                   # 直接按矩形高度贴(不要再乘 sh, 否则会被推飞出画布)
-        else:
-            # mesh 顶点是「图层原稿」的像素坐标, 原点(0,0) 就是该 Image 矩形的左下角,
-            # 原点之上 ymax 处是图像顶边。所以必须用 ymax 定位, 而不是矩形高度:
-            # 多数图层 ymax≈mRawSpriteSize.y, 与旧公式只差 1~4 像素(看不出来);
-            # 少数图层(baifeng_rw 差 447px, baifeng_bj 差 684px)会整段错位。
-            ytop = float(meta.get("ymax", h)) * sh
-
-        # 2) 缩放到 RectTransform 给出的矩形尺寸
-        dw, dh = int(round(lay.width * sw)), int(round(lay.height * sh))
-        if (dw, dh) != lay.size and dw > 0 and dh > 0:
-            lay = lay.resize((dw, dh), Image.BILINEAR)
-
-        # 3) 贴到画布 (Unity y 向上 -> PIL y 向下)
-        #    ytop = mesh 原点(即矩形左下角)到图像顶边的距离, 它可能大于 rect 高度
-        #    (图层原稿比矩形大, 例如 baifeng_rw / baifeng_bj), 必须按它定位。
-        x = int(round(ox))
-        y = int(round(C[1] - oy - ytop)) + Y_BIAS
+        lay, x, y = r
+        if probe is not None:
+            _probe_hole(pf, probe, L, lay, x, y)
         canvas.alpha_composite(lay, (x, y))
 
     # 表情
@@ -577,6 +662,20 @@ def composite(pf: PaintingPrefab, painting_dir: str, face_img: Image.Image | Non
         canvas.alpha_composite(f, (x, y))
 
     return canvas, missing
+
+
+def face_is_hole(pf: PaintingPrefab, painting_dir: str) -> bool:
+    """脸部那块是不是挖空的洞(需要补默认表情)。
+
+    新立绘把脸拆成独立 Sprite, 人物层在脸部**挖了个矩形洞** —— 不补就会露出背景层,
+    看起来像脸上盖了个大白框(其实透出来的是背景)。老立绘脸直接画在人物层里
+    (prefab 的 face 节点引用的 Sprite 另有用处), 这时不能补, 否则会重影。
+
+    这里为了独立判定会完整合成一遍; 主流程请用 composite(..., probe={}) 顺带判定。
+    """
+    probe = {}
+    composite(pf, painting_dir, None, probe=probe)
+    return bool(probe.get("hole"))
 
 
 # ============================================================================
@@ -658,14 +757,19 @@ def align_face(patch: Image.Image, base: Image.Image, face_rect):
     return (0, 0)
 
 
-def load_faces(face_dir: str, name: str):
-    """读取 paintingface/<name> 里的表情贴图, 返回 {编号: PIL.Image} (按贴图名排序)。"""
+def load_face_pack(face_dir: str, name: str):
+    """读取 paintingface/<name>, 返回 (贴图表, {Sprite PathID: PIL.Image})。
+
+    贴图表: {贴图名: Image}, 按贴图名排序(0,1,2...)。
+    Sprite 表: 用于按 prefab 里 face 节点引用的 Sprite 找回"默认表情"。
+    """
     ab = os.path.join(face_dir, name)
+    out, pid2img = {}, {}
     if not os.path.isfile(ab):
-        return {}
-    out = {}
+        return out, pid2img
     try:
         env, objs = _load_ab(ab)
+        texs = {}
         for o in objs.values():
             if o.type.name != "Texture2D":
                 continue
@@ -677,14 +781,66 @@ def load_faces(face_dir: str, name: str):
             nm = str(getattr(d, "m_Name", "") or "").strip()
             if img is not None and nm:
                 out[nm] = img
+                texs[o.path_id] = img
+        # Sprite -> 它引用的贴图
+        for o in objs.values():
+            if o.type.name != "Sprite":
+                continue
+            try:
+                d = o.read()
+                t = getattr(getattr(d, "m_RD", None), "texture", None)
+                tp = getattr(t, "path_id", None)
+                if tp is None and t is not None:          # 兼容旧版 UnityPy 的写法
+                    tp = t.get("m_PathID") if isinstance(t, dict) else getattr(t, "m_PathID", None)
+                if tp is not None and tp in texs:
+                    pid2img[o.path_id] = texs[tp]
+            except Exception:
+                continue
     except Exception as e:
         log(f"    [警告] 读取表情包失败: {e}")
-        return {}
+        return {}, {}
 
     def key(k):
         return (0, int(k), "") if k.isdigit() else (1, 0, k)
 
-    return {k: out[k] for k in sorted(out, key=key)}
+    return {k: out[k] for k in sorted(out, key=key)}, pid2img
+
+
+def load_faces(face_dir: str, name: str):
+    """读取 paintingface/<name> 里的表情贴图, 返回 {编号: PIL.Image} (按贴图名排序)。"""
+    return load_face_pack(face_dir, name)[0]
+
+
+def pick_default_face(pf: "PaintingPrefab", faces: dict, pid2img: dict,
+                      face_dir: str | None = None, name: str | None = None):
+    """挑出"基础立绘"该补的默认表情(只在确认脸部是洞之后调用)。
+
+    优先用 prefab 里 face 节点引用的那张 Sprite(按 PathID 精确匹配);
+    少数配置包没写这个引用(PathID=0)但图层照样挖了洞(如 haerxibaoweier_3),
+    这时按命名约定取 0 号贴图 —— 和表情差分第 1 张是同一张。
+
+    变体自己没有 paintingface 包时(如 jian_3_hx / zhaohe_4_hx), 按 PathID
+    向基础立绘的表情包借用。
+    """
+    pid = int(getattr(pf, "face_sprite_pid", 0) or 0)
+    if pid:
+        img = pid2img.get(pid)
+        if img is not None:
+            return img
+        if face_dir and name:
+            for base in _cand_bases(name, name):
+                p = os.path.join(face_dir, base)
+                if os.path.isfile(p):
+                    _, m2 = load_face_pack(face_dir, base)
+                    if pid in m2:
+                        log(f"    默认表情借用 {base} 的表情包")
+                        return m2[pid]
+    if "0" in faces:
+        return faces["0"]             # 兜底: 命名约定 0 号就是默认表情
+    if faces:
+        # 少数老资源的表情从 1 开始编号(没有 0 号), 用第一张充当默认表情
+        return next(iter(faces.values()))
+    return None
 
 
 # ============================================================================
@@ -940,8 +1096,9 @@ def run(bundles_dir, out_dir, only=None, want_layer=False, want_face=True,
                 if img:
                     img.save(os.path.join(ship_dir, f"{name}__layer__{L['name']}.png"))
 
-        # 基础立绘(无表情)
-        base, missing = composite(pf, painting_dir, None)
+        # 基础立绘(图层合成; 表情单独处理)
+        probe = {}
+        base, missing = composite(pf, painting_dir, None, probe=probe)
         if missing:
             log(f"    缺少图层资源: {', '.join(missing)}")
         if pf.face_rect is None:
@@ -950,19 +1107,13 @@ def run(bundles_dir, out_dir, only=None, want_layer=False, want_face=True,
             ok.append(name)
             continue
 
-        base.save(os.path.join(ship_dir, f"{name}.png"))
-
-        # 表情差分
-        faces = load_faces(face_dir, name) if want_face else {}
-        if not faces:
-            base.save(os.path.join(ship_dir, f"{name}_exp.png"))
-            log(f"    -> {name}.png / {name}_exp.png {base.size} (无表情资源)")
-            ok.append(name)
-            continue
+        # 表情资源(基础图补默认表情也要用, 所以不管有没有开表情导出都读)
+        faces, pid2img = load_face_pack(face_dir, name)
 
         # 表情自动对齐: 每个立绘只算一次, 所有表情共用
+        # (用"未补脸"的 base 判定, 保持原有行为不变)
         foff = (0, 0)
-        if face_align:
+        if face_align and faces:
             try:
                 foff = align_face(next(iter(faces.values())), base, pf.face_rect)
             except Exception:
@@ -970,12 +1121,34 @@ def run(bundles_dir, out_dir, only=None, want_layer=False, want_face=True,
             if foff != (0, 0):
                 log(f"    表情自动对齐: 在原位置基础上偏移 {foff}")
 
+        # 补默认表情: 新立绘的 rw 图层脸部是挖空的, 不贴这张就会露出背景(大白框)
+        # probe 已经在上面合成时判定过了, 老立绘/没有洞的不补, 避免糊上第二张脸
+        df = None
+        if probe.get("hole"):
+            df = pick_default_face(pf, faces, pid2img, face_dir, name)
+            if df is None:
+                log(f"    [提示] 脸部这块是空的, 但没有可用的默认表情(表情包缺失?)")
+        if df is not None:
+            base, _ = composite(pf, painting_dir, df, foff)
+
+        base.save(os.path.join(ship_dir, f"{name}.png"))
+
+        if not want_face or not faces:
+            base.save(os.path.join(ship_dir, f"{name}_exp.png"))
+            why = "未导出表情" if not want_face else "无表情资源"
+            log(f"    -> {name}.png / {name}_exp.png {base.size} ({why})")
+            ok.append(name)
+            continue
+
+        first = None
         for i, (fname, fimg) in enumerate(faces.items(), 1):
             img, _ = composite(pf, painting_dir, fimg, foff)
+            if first is None:
+                first = img
             img.save(os.path.join(ship_dir, f"{name}_exp_{i}.png"))
-        # 兼容 ALPA 的导入命名
-        img0, _ = composite(pf, painting_dir, next(iter(faces.values())), foff)
-        img0.save(os.path.join(ship_dir, f"{name}_exp.png"))
+        # 兼容 ALPA 的导入命名: <立绘名>_exp.png 就是默认表情那张
+        if first is not None:
+            first.save(os.path.join(ship_dir, f"{name}_exp.png"))
         log(f"    -> {name}.png + {len(faces)} 张表情 {base.size}")
         ok.append(name)
 
@@ -1073,9 +1246,9 @@ def gui():
     ttk.Checkbutton(f3, text="导出表情差分", variable=v_face).grid(
         row=1, column=1, sticky="w", padx=(14, 0), pady=(6, 0))
     ttk.Checkbutton(f3, text="表情贴图自动对齐（推荐）", variable=v_align).grid(
-        row=2, column=0, sticky="w", pady=(6, 0))
+        row=1, column=2, sticky="w", padx=(14, 0), pady=(6, 0))
     ttk.Label(f3, text="小技巧: 先在上面的搜索框输入关键词(如 aerbien) → 点「全选(当前列表)」→ 就只还原这一批",
-              foreground="#888").grid(row=3, column=0, columnspan=3, sticky="w", pady=(6, 0))
+              foreground="#888").grid(row=2, column=0, columnspan=2, sticky="w", pady=(6, 0))
 
     # ------------------------------------------------------------- 4. 运行
     f4 = ttk.Frame(root, padding=(10, 0))
