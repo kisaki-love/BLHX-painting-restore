@@ -1197,8 +1197,11 @@ def gui():
     ttk.Label(f1, text="输出目录:").grid(row=1, column=0, sticky="w", pady=(6, 0))
     ttk.Entry(f1, textvariable=v_out).grid(row=1, column=1, sticky="ew", padx=6, pady=(6, 0))
     ttk.Button(f1, text="浏览…", command=lambda: _pick_out()).grid(row=1, column=2, pady=(6, 0))
-    ttk.Label(f1, text="(根目录为游戏 AssetBundles，需含 painting 子目录)", foreground="#888").grid(
-        row=2, column=1, sticky="w", padx=6, pady=(4, 0))
+    ttk.Label(f1, justify="left", foreground="#888", wraplength=820, text=(
+        r"必须含 painting\ —— 每个立绘的配置包 + 各图层贴图；缺了会扫描不到立绘，个别贴图包缺失则成品缺那一层。"
+        "\n"
+        r"paintingface\ 可选 —— 表情差分；缺了只是不导出 _exp_N.png，主图不受影响。"
+    )).grid(row=2, column=1, columnspan=2, sticky="w", padx=6, pady=(4, 0))
 
     # ------------------------------------------------------------ 2. 选立绘
     f2 = ttk.LabelFrame(root, text=" 2. 选择要还原的立绘 ", padding=10)
@@ -1265,8 +1268,15 @@ def gui():
     ttk.Label(f4, textvariable=v_prog).grid(row=0, column=5, sticky="e")
     f4.columnconfigure(4, weight=1)
 
-    txt = tk.Text(root, height=8, font=("Consolas", 9))
-    txt.grid(row=5, column=0, sticky="nsew", padx=10, pady=(8, 10))
+    logwrap = ttk.Frame(root)
+    logwrap.grid(row=5, column=0, sticky="nsew", padx=10, pady=(8, 10))
+    logwrap.columnconfigure(0, weight=1)
+    logwrap.rowconfigure(0, weight=1)
+    txt = tk.Text(logwrap, height=8, font=("Consolas", 9))
+    tsb = ttk.Scrollbar(logwrap, orient="vertical", command=txt.yview)
+    txt.configure(yscrollcommand=tsb.set)
+    txt.grid(row=0, column=0, sticky="nsew")
+    tsb.grid(row=0, column=1, sticky="ns")
 
     # ================================================================ 逻辑
     def _set_count():
@@ -1346,6 +1356,8 @@ def gui():
         if not os.path.isdir(pd_):
             v_count.set("未找到 painting 目录")
             log(f"[错误] 不是有效的 AssetBundles 根目录: {b}")
+            log("       这个目录里必须有 painting 文件夹（存放每个立绘的配置包和图层贴图）;")
+            log("       paintingface 是表情差分, 可选, 缺了只是不导出 _exp_N.png。")
             return
         state["all"] = find_paintings(pd_)
         state["sel"] &= set(state["all"])
@@ -1368,12 +1380,17 @@ def gui():
             return len(s)
 
     def _pump():
+        at_bottom = txt.yview()[1] >= 0.999    # 先看是否停在底部: 用户往上翻时不要把他拽回来
+        got = 0
         try:
             while True:
-                txt.insert("end", q.get_nowait())
+                s = q.get_nowait()
+                txt.insert("end", s)
+                got += len(s)
         except queue.Empty:
             pass
-        txt.see("end")
+        if got and at_bottom:
+            txt.see("end")
         root.after(100, _pump)
 
     pb = None
@@ -1388,7 +1405,10 @@ def gui():
     def _start():
         b = v_bundles.get().strip()
         if not os.path.isdir(os.path.join(b, "painting")):
-            messagebox.showwarning("提示", "请先选择正确的 AssetBundles 根目录（需含 painting 子目录）")
+            messagebox.showwarning("提示", (
+                "请先选择 AssetBundles 根目录, 里面必须有 painting 文件夹。\n\n"
+                r"painting\     每个立绘的配置包 + 各图层贴图(必需; 缺了扫描不到立绘)" "\n"
+                r"paintingface\ 表情差分贴图(可选; 缺了只是不导出 _exp_N.png)"))
             return
         _sync_from_lb()
         only = None
@@ -1437,7 +1457,10 @@ def gui():
     def _check_materials():
         b = v_bundles.get().strip()
         if not os.path.isdir(os.path.join(b, "painting")):
-            messagebox.showwarning("提示", "请先选择正确的 AssetBundles 根目录（需含 painting 子目录）")
+            messagebox.showwarning("提示", (
+                "请先选择 AssetBundles 根目录, 里面必须有 painting 文件夹。\n\n"
+                r"painting\     每个立绘的配置包 + 各图层贴图(必需; 缺了扫描不到立绘)" "\n"
+                r"paintingface\ 表情差分贴图(可选; 缺了只是不导出 _exp_N.png)"))
             return
         _sync_from_lb()
         scope = sorted(state["sel"]) if (v_scope.get() == "selected" and state["sel"]) else None
