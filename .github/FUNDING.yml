@@ -1,0 +1,5 @@
+# 赞助 / Sponsorship
+# Patreon 的规范地址是 https://www.patreon.com/cw/<handle>，
+# 而 `patreon:` 字段只接受用户名并拼成 https://patreon.com/<name>，
+# 所以用 custom 写完整 URL（最多 4 条）。
+custom: ["https://www.patreon.com/cw/kisaki_love"]
