@@ -7,3 +7,4 @@
 *.md   text eol=lf
 *.txt  text eol=lf
 *.png  binary
+*.yml  text eol=lf
