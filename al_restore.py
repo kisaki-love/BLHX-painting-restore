@@ -41,6 +41,7 @@ import io
 import os
 import re
 import sys
+import tempfile
 import time
 import traceback
 import warnings
@@ -651,17 +652,19 @@ def composite(pf: PaintingPrefab, painting_dir: str, face_img: Image.Image | Non
             _probe_hole(pf, probe, L, lay, x, y)
         canvas.alpha_composite(lay, (x, y))
 
-    # 表情
     if face_img is not None and pf.face_rect is not None:
-        ox, oy, w, h = pf.face_rect
-        f = face_img
-        if (int(round(w)), int(round(h))) != f.size and int(round(w)) > 0:
-            f = f.resize((int(round(w)), int(round(h))), Image.BILINEAR)
-        x = int(round(ox)) + int(face_offset[0])
-        y = int(round(C[1] - oy - h)) + Y_BIAS + int(face_offset[1])
-        canvas.alpha_composite(f, (x, y))
-
+        paste_face(canvas, pf.face_rect, face_img, face_offset)
     return canvas, missing
+
+
+def paste_face(canvas, rect, face, offset):
+    ox, oy, w, h = rect
+    size = (int(round(w)), int(round(h)))
+    if size != face.size and size[0] > 0:
+        face = face.resize(size, Image.BILINEAR)
+    x = int(round(ox)) + int(offset[0])
+    y = int(round(canvas.height - oy - h)) + Y_BIAS + int(offset[1])
+    canvas.alpha_composite(face, (x, y))
 
 
 def face_is_hole(pf: PaintingPrefab, painting_dir: str) -> bool:
@@ -1033,6 +1036,43 @@ def check_materials_report(bundles_dir, out_txt=None, only=None, jobs=None,
                 total=len(names), checked=min(len(names), i if names else 0))
 
 
+def expression_faces(faces, default):
+    """先确定需要绘制的源表情；默认脸已用于主图，重复贴图只取首次出现。"""
+    def source_key(face):
+        rgba = face.convert("RGBA")
+        return rgba.size, rgba.tobytes()
+
+    used = {source_key(default)} if default is not None else set()
+    for face in faces:
+        key = source_key(face)
+        if key not in used:
+            used.add(key)
+            yield face
+
+
+def save_expressions(ship_dir, name, base, rect, offset, faces):
+    """在同一张未贴脸底图上绘制各个表情，成功后刷新旧输出。"""
+    keep = set()
+    for i, face in enumerate(faces, 1):
+        filename = f"{name}_exp_{i}.png"
+        with tempfile.NamedTemporaryFile(dir=ship_dir, delete=False) as tmp:
+            pending = tmp.name
+        try:
+            with base.copy() as image:
+                paste_face(image, rect, face, offset)
+                image.save(pending, format="PNG")
+            os.replace(pending, os.path.join(ship_dir, filename))
+        finally:
+            if os.path.exists(pending):
+                os.unlink(pending)
+        keep.add(filename)
+    generated = re.compile(re.escape(name) + r"_exp(?:_[1-9][0-9]*)?\.png")
+    for entry in os.scandir(ship_dir):
+        if generated.fullmatch(entry.name) and entry.name not in keep and entry.is_file():
+            os.unlink(entry.path)
+    return len(keep)
+
+
 def run(bundles_dir, out_dir, only=None, want_layer=False, want_face=True,
         jobs=None, progress=None, should_stop=None, face_align=True):
     """bundle 模式主流程。返回成功处理的立绘名列表。
@@ -1103,6 +1143,7 @@ def run(bundles_dir, out_dir, only=None, want_layer=False, want_face=True,
             log(f"    缺少图层资源: {', '.join(missing)}")
         if pf.face_rect is None:
             base.save(os.path.join(ship_dir, f"{name}.png"))
+            save_expressions(ship_dir, name, base, pf.face_rect, (0, 0), ())
             log(f"    -> {name}.png {base.size} (无表情框)")
             ok.append(name)
             continue
@@ -1129,27 +1170,22 @@ def run(bundles_dir, out_dir, only=None, want_layer=False, want_face=True,
             if df is None:
                 log(f"    [提示] 脸部这块是空的, 但没有可用的默认表情(表情包缺失?)")
         if df is not None:
-            base, _ = composite(pf, painting_dir, df, foff)
-
-        base.save(os.path.join(ship_dir, f"{name}.png"))
+            with base.copy() as main_image:
+                paste_face(main_image, pf.face_rect, df, foff)
+                main_image.save(os.path.join(ship_dir, f"{name}.png"))
+        else:
+            base.save(os.path.join(ship_dir, f"{name}.png"))
 
         if not want_face or not faces:
-            base.save(os.path.join(ship_dir, f"{name}_exp.png"))
+            save_expressions(ship_dir, name, base, pf.face_rect, (0, 0), ())
             why = "未导出表情" if not want_face else "无表情资源"
-            log(f"    -> {name}.png / {name}_exp.png {base.size} ({why})")
+            log(f"    -> {name}.png {base.size} ({why})")
             ok.append(name)
             continue
 
-        first = None
-        for i, (fname, fimg) in enumerate(faces.items(), 1):
-            img, _ = composite(pf, painting_dir, fimg, foff)
-            if first is None:
-                first = img
-            img.save(os.path.join(ship_dir, f"{name}_exp_{i}.png"))
-        # 兼容 ALPA 的导入命名: <立绘名>_exp.png 就是默认表情那张
-        if first is not None:
-            first.save(os.path.join(ship_dir, f"{name}_exp.png"))
-        log(f"    -> {name}.png + {len(faces)} 张表情 {base.size}")
+        variants = expression_faces(faces.values(), df)
+        count = save_expressions(ship_dir, name, base, pf.face_rect, foff, variants)
+        log(f"    -> {name}.png + {count} 张表情 {base.size}")
         ok.append(name)
 
     log(f"完成, 耗时 {time.time()-t0:.1f}s, 成功 {len(ok)} 个")
