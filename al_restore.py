@@ -71,8 +71,8 @@ except Exception:          # pragma: no cover
 # ----------------------------------------------------------------------------
 # 常量
 # ----------------------------------------------------------------------------
-VERSION = "1.1"
-APP_TITLE = "碧蓝航线 · 静态立绘还原工具"
+VERSION = "1.2"
+APP_TITLE = "Azur Lane Painting Restore"
 
 Y_BIAS = 1  # 与官方还原结果对齐的 1 像素纵向补偿(实测)
 
@@ -1227,17 +1227,24 @@ def gui():
     f1.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 4))
     f1.columnconfigure(1, weight=1)
 
-    ttk.Label(f1, text="AssetBundles 根目录:").grid(row=0, column=0, sticky="w")
-    ttk.Entry(f1, textvariable=v_bundles).grid(row=0, column=1, sticky="ew", padx=6)
-    ttk.Button(f1, text="浏览…", command=lambda: _pick_bundles()).grid(row=0, column=2)
-    ttk.Label(f1, text="输出目录:").grid(row=1, column=0, sticky="w", pady=(6, 0))
-    ttk.Entry(f1, textvariable=v_out).grid(row=1, column=1, sticky="ew", padx=6, pady=(6, 0))
-    ttk.Button(f1, text="浏览…", command=lambda: _pick_out()).grid(row=1, column=2, pady=(6, 0))
-    ttk.Label(f1, justify="left", foreground="#888", wraplength=820, text=(
-        r"必须含 painting\ —— 每个立绘的配置包 + 各图层贴图；缺了会扫描不到立绘，个别贴图包缺失则成品缺那一层。"
-        "\n"
-        r"paintingface\ 可选 —— 表情差分；缺了只是不导出 _exp_N.png，主图不受影响。"
-    )).grid(row=2, column=1, columnspan=2, sticky="w", padx=6, pady=(4, 0))
+    ttk.Label(f1, text=f"{APP_TITLE} · v{VERSION}", font=("TkDefaultFont", 14, "bold")).grid(
+        row=0, column=0, columnspan=3, sticky="w")
+    ttk.Label(f1, justify="left", text=(
+        "Restore static illustrations and facial expressions from local Azur Lane assets.\n"
+        "从《碧蓝航线》本地资源还原静态立绘，导出主图与表情差分。"
+    )).grid(row=1, column=0, columnspan=3, sticky="w", pady=(2, 8))
+
+    ttk.Label(f1, text="AssetBundles 根目录").grid(row=2, column=0, sticky="w")
+    ttk.Entry(f1, textvariable=v_bundles).grid(row=2, column=1, sticky="ew", padx=6)
+    ttk.Button(f1, text="浏览…", command=lambda: _pick_bundles()).grid(row=2, column=2)
+    ttk.Label(f1, justify="left", wraplength=640, text=(
+        "选择包含 painting/ 的文件夹。paintingface/ 提供表情贴图，部分立绘也依赖它补全主图面部。"
+    )).grid(row=3, column=1, columnspan=2, sticky="w", padx=6, pady=(1, 6))
+    ttk.Label(f1, text="输出目录").grid(row=4, column=0, sticky="w")
+    ttk.Entry(f1, textvariable=v_out).grid(row=4, column=1, sticky="ew", padx=6)
+    ttk.Button(f1, text="浏览…", command=lambda: _pick_out()).grid(row=4, column=2)
+    ttk.Label(f1, text="每套立绘保存到独立的同名文件夹。").grid(
+        row=5, column=1, columnspan=2, sticky="w", padx=6)
 
     # ------------------------------------------------------------ 2. 选立绘
     f2 = ttk.LabelFrame(root, text=" 2. 选择要还原的立绘 ", padding=10)

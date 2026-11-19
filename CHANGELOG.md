@@ -2,6 +2,24 @@
 
 > 最新版本在最前面。v1.0 是首个公开发布，里面也记录了开发过程中修掉的关键问题。
 
+## v1.2 — Expression Rendering / 表情合成优化
+
+### English
+
+Each illustration’s base layers are composed once. Before drawing a face, the tool skips identical source textures and the default face if it has already been applied to the main artwork.
+
+Expressions are numbered from `_exp_1.png`. Re-exporting refreshes the numbered files and removes the legacy `_exp.png` copy. Using `--no-face` clears previously exported expressions for that illustration.
+
+The repository introduction and desktop window now introduce the tool in English first, followed by Chinese. Tested on four illustrations from asset version `0.0.1820`, producing four main images and 43 expression variants.
+
+### 中文
+
+每套立绘只合成一次底图。工具在贴脸前跳过相同的源贴图，已用于补全主图的默认表情也只绘制一次。
+
+表情差分从 `_exp_1.png` 连续编号。重新导出时会清理旧版 `_exp.png` 副本和多余编号。使用 `--no-face` 重新导出时，会清空该立绘之前导出的表情。
+
+仓库首页和工具窗口采用英文在前、中文在后的简介。使用立绘资源版本 `0.0.1820` 实测 `banerwei_4`、`nabulesi_3`、`u2501_2` 和 `xinaoerliang_3`，共导出 4 张主图与 43 张表情差分。
+
 **v1.1（修「脸上一个大白框」+ 增量素材的小问题）**
 
 症状：少数立绘（如 `u2501_2`、`leiniya_2`、`z13`、`silverfox`、`bote`、`alabama_3`）

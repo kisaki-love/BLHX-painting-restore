@@ -1,72 +1,67 @@
-# 碧蓝航线 · 静态立绘还原工具
+# Azur Lane Painting Restore
 
-![version](https://img.shields.io/badge/version-1.1-blue)
-![python](https://img.shields.io/badge/python-3.10%2B-blue)
-![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
-![license](https://img.shields.io/badge/license-MIT-green)
+**v1.2** · Python 3.10+ · Windows / Linux / macOS · MIT
 
-把游戏里被切碎、散落在图集里的立绘，还原成**一张完整的透明底 PNG**（含表情差分）。
+[阅读中文简介](#碧蓝航线立绘还原工具)
 
-> [!WARNING]
-> 仅供个人学习研究使用，请勿用于 MOD 制作、二次分发或商业用途。
-> 游戏素材版权归 蛮啾网络 / 勇仕网络 所有。 · For personal study only. Assets © Manjuu / Yongshi.
+Reconstruct static character illustrations from local *Azur Lane* AssetBundles. The tool assembles texture fragments using the game’s meshes and layer layout, preserves canvas size and transparency, and exports the artwork and its facial expressions as PNG files.
 
-## 快速开始 · Quick start
+![Restored artwork from nabulesi_3](docs/nabulesi_3-preview.png)
 
-需要 Python 3.10+ / Requires Python 3.10+
+*nabulesi_3 · Preview of the 3814 × 2544 restored PNG.*
 
-- **Windows**：双击 `启动工具.bat`（缺依赖会自动安装 / deps auto-install）
-- **Linux / macOS**：`pip install -r requirements.txt`，然后 `./run.sh --gui`
+### Quick start
 
-打开界面后：选 `AssetBundles` 根目录 → 点「扫描 / 刷新」→ 勾选立绘 → 点「开始还原」。
-结果在 `<输出目录>/<立绘名>/`：一张主图 + `_exp_1..N.png` 表情差分。
-每套立绘只合成一次底图；工具在贴脸前跳过重复的源表情，以及已补到主图的默认表情。重复导出同一立绘会刷新其表情文件，清理旧版的 `_exp.png` 和多余编号。使用 `--no-face` 重新导出时会清空该立绘之前导出的表情。
+1. On Windows, run `启动工具.bat`. On Linux or macOS, run `pip install -r requirements.txt`, then `./run.sh --gui`. The graphical interface requires Tkinter.
+2. Select the `AssetBundles` folder containing `painting/` and choose an output folder. Some illustrations also need `paintingface/` for their default face or additional expressions.
+3. Click **扫描 / 刷新** (Scan), select the illustrations you want, then click **开始还原** (Restore).
 
-## 命令行 · CLI
+Each illustration has its own output folder. The main file is `<name>.png`. Additional expressions start at `<name>_exp_1.png`. Re-exporting refreshes the numbered files and removes the legacy `_exp.png` copy. Using `--no-face` clears previously exported expressions for that illustration.
+
+### Command line
 
 ```bash
-# 全部还原（约 3000 个，40 分钟左右）
-python al_restore.py --bundles "D:\Game\AzurLane\AssetBundles" --out "D:\还原输出"
-
-# 只还原指定的几个
-python al_restore.py --bundles "...\AssetBundles" --out "D:\还原输出" --only "aerbien_2,sali_2"
+python al_restore.py --bundles "/path/to/AssetBundles" --out "./restored" --only "nabulesi_3,banerwei_4"
 ```
 
-| 参数 Argument | 说明 Description |
-|---|---|
-| `--bundles DIR` | AssetBundles 根目录（需含 `painting\`）/ asset root |
-| `--out DIR` | 输出目录 / output folder |
-| `--only a,b` | 只还原指定立绘 / only these paintings |
-| `--layer` | 同时导出每个图层 / dump each layer |
-| `--no-face` | 不导出表情差分 / skip expressions |
-| `--jobs N` | 只跑前 N 个（调试）/ first N only |
-| `--gui` | 打开图形界面 / open GUI |
+Omit `--only` to restore all paintings. Use `--layer` to export individual layers, `--jobs N` to process the first N paintings, and `--help` for all options.
 
-## 常见问题 · FAQ
+### Troubleshooting and use
 
-- **缺背景、少一块？** 先跑 `check_materials.py`，多半是资源里缺对应的 `_tex` 贴图包。
-  Missing parts? Run `check_materials.py` — it lists the absent `_tex` packs.
-- **和别人的结果对不上？** 素材版本不同，用哪版素材出来就是哪版。
-  Different game version, different pixels.
-- **输出尺寸特别大（8000+ px）？** 画布尺寸由游戏自己定，工具按原样输出。
-  Canvas size comes from the game data.
+If a layer is missing, run `python check_materials.py --bundles "/path/to/AssetBundles"` to check for missing texture packs. Canvas dimensions come from the game, and artwork can vary between asset versions.
 
-## 说明 · Notes
+This free tool reads local assets for personal study. Please refrain from mod creation, redistribution of game assets, or commercial use. The MIT license covers the tool’s code. Game artwork © Manjuu / Yongshi.
 
-- 只读取本地资源并重新拼合：**不修改游戏、不注入进程、不绕过任何校验**。
-  Reads local assets and recomposes them only.
-- 不收费、不以此牟利，也不附带任何游戏素材。
-  Free of charge; ships no game assets.
+## 碧蓝航线立绘还原工具
 
-## 致谢 · Credits
+从《碧蓝航线》本地 AssetBundles 资源中还原静态角色立绘。工具按照游戏中的网格和图层布局拼合贴图碎片，保留原始画布尺寸与透明区域，将主图和表情差分导出为 PNG。
 
-**DeepSeek-V4.1-Flash** —— 本项目代码由该大模型协助编写（图层定位逆向、全库批量验证、文档整理）。
+### 快速开始
 
-图层拼图思路参考开源项目 [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)，
-布局规则由本项目独立逆向验证（用官方宣传图逐像素比对）。
+1. Windows 双击 `启动工具.bat`。Linux 或 macOS 先运行 `pip install -r requirements.txt`，再运行 `./run.sh --gui`。图形界面需要 Tkinter。
+2. 选择含 `painting/` 的 AssetBundles 根目录，并指定输出目录。部分立绘还需要 `paintingface/` 来补全默认面部或生成表情差分。
+3. 点击 **扫描 / 刷新**，选中立绘，再点击 **开始还原**。
 
-维护者 / Maintainer：[kisaki-love](https://github.com/kisaki-love) · 欢迎提 Issue / PR
+每套立绘保存到同名文件夹。例如，`nabulesi_3.png` 是主图，`nabulesi_3_exp_1.png` 至 `nabulesi_3_exp_13.png` 是这套立绘的 13 张表情差分。重新导出时会清理旧版 `_exp.png` 副本和多余编号。使用 `--no-face` 重新导出时，会清空该立绘之前导出的表情。
 
-## License
+### 命令行
 
-MIT
+```powershell
+python al_restore.py --bundles "D:\Game\AzurLane\AssetBundles" --out "D:\还原输出" --only "nabulesi_3,banerwei_4"
+```
+
+省略 `--only` 即可还原全部立绘。`--layer` 同时导出各图层，`--jobs N` 只处理前 N 套立绘，`--help` 列出完整参数。
+
+### 素材检查与使用说明
+
+若成品缺少背景或某个图层，可运行 `check_materials.py` 检查缺少的贴图包。画布尺寸由游戏资源决定，不同版本的素材可能得到不同画面。
+
+本工具免费，仅供个人学习研究。请勿用于 MOD 制作、游戏素材二次分发或商业用途。工具代码采用 MIT 许可证，游戏素材版权归蛮啾网络、勇仕网络所有。
+
+### Credits / 致谢
+
+DeepSeek-V4.1-Flash assisted with layer positioning, batch verification, and documentation. The layer reconstruction approach draws on ALPA. Layout rules were independently checked against official promotional artwork. [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)
+
+DeepSeek-V4.1-Flash 协助完成图层定位分析、全库批量验证和文档整理。图层拼图思路参考 ALPA，布局规则通过与官方宣传图逐像素比对独立验证。
+
+Maintainer / 维护者：[kisaki-love](https://github.com/kisaki-love) · [MIT License](LICENSE)
