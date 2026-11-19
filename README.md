@@ -6,10 +6,6 @@
 
 Reconstruct static character illustrations from local *Azur Lane* AssetBundles. The tool assembles texture fragments using the game’s meshes and layer layout, preserves canvas size and transparency, and exports the artwork and its facial expressions as PNG files.
 
-![Restored artwork from nabulesi_3](docs/nabulesi_3-preview.png)
-
-*nabulesi_3 · Preview of the 3814 × 2544 restored PNG.*
-
 ### Quick start
 
 1. On Windows, run `启动工具.bat`. On Linux or macOS, run `pip install -r requirements.txt`, then `./run.sh --gui`. The graphical interface requires Tkinter.
@@ -30,7 +26,7 @@ Omit `--only` to restore all paintings. Use `--layer` to export individual layer
 
 If a layer is missing, run `python check_materials.py --bundles "/path/to/AssetBundles"` to check for missing texture packs. Canvas dimensions come from the game, and artwork can vary between asset versions.
 
-This free tool reads local assets for personal study. Please refrain from mod creation, redistribution of game assets, or commercial use. The MIT license covers the tool’s code. Game artwork © Manjuu / Yongshi.
+The tool’s code is available under the [MIT License](LICENSE), which permits commercial use. Keep the copyright and permission notices when distributing copies or substantial portions of the software. Rights to the game artwork belong to their respective holders. Use and share restored images only as their permissions allow.
 
 ## 碧蓝航线立绘还原工具
 
@@ -56,12 +52,10 @@ python al_restore.py --bundles "D:\Game\AzurLane\AssetBundles" --out "D:\还原�
 
 若成品缺少背景或某个图层，可运行 `check_materials.py` 检查缺少的贴图包。画布尺寸由游戏资源决定，不同版本的素材可能得到不同画面。
 
-本工具免费，仅供个人学习研究。请勿用于 MOD 制作、游戏素材二次分发或商业用途。工具代码采用 MIT 许可证，游戏素材版权归蛮啾网络、勇仕网络所有。
+工具代码采用 [MIT 许可证](LICENSE)，允许商业使用。分发软件副本或其重要部分时，请保留版权声明和许可声明。游戏美术素材的权利归各权利人所有，使用或分享还原图片时，请遵循权利人的授权。
 
 ### Credits / 致谢
 
-DeepSeek-V4.1-Flash assisted with layer positioning, batch verification, and documentation. The layer reconstruction approach draws on ALPA. Layout rules were independently checked against official promotional artwork. [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)
+Developed with AI assistance. The approach to assembling artwork layers draws on [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt).
 
-DeepSeek-V4.1-Flash 协助完成图层定位分析、全库批量验证和文档整理。图层拼图思路参考 ALPA，布局规则通过与官方宣传图逐像素比对独立验证。
-
-Maintainer / 维护者：[kisaki-love](https://github.com/kisaki-love) · [MIT License](LICENSE)
+本工具由 AI 辅助开发，立绘图层的拼合思路参考了 [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)。
