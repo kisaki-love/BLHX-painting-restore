@@ -112,7 +112,7 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.auto_open = False
-        self.setWindowTitle("碧蓝航线立绘还原工具 v2.0 预览版")
+        self.setWindowTitle("碧蓝航线立绘还原工具 v2.1")
         self.setWindowIcon(icon())
         self.setAcceptDrops(True)
         self.resize(990, 675)
@@ -144,7 +144,7 @@ class Window(QWidget):
         mark.setPixmap(self.windowIcon().pixmap(42,42))
         nav.addWidget(mark)
         nav.addWidget(label("Painting Restore","brand"))
-        nav.addWidget(label("v2.0  ·  Windows 预览版","hint"))
+        nav.addWidget(label("v2.1  ·  Windows x64","hint"))
         self.section_name = label("", "hint")
         nav.addWidget(self.section_name)
         self.home_button = button("返回功能首页", lambda: self.screens.setCurrentIndex(0))
@@ -215,6 +215,8 @@ class Window(QWidget):
         for kind, title, detail in (
             ("painting","静态立绘 · painting","还原主图、表情差分与图层"),
             ("spine","Spine 动态立绘","提取骨骼、图集描述与贴图"),
+            ("background","过场与剧情背景","平铺导出加载或剧情背景 PNG"),
+            ("startup","启动与登录图","导出登录背景与更新背景 PNG"),
             ("live2d","Live2D 模型","提取模型、贴图、原始动作及模型入口文件"),
         ):
             entry = QPushButton(title + "   ｜   " + detail)
@@ -237,10 +239,11 @@ class Window(QWidget):
             self.tree.clear()
             self.last_job = None
         self.asset_kind = kind
+        self.search.setPlaceholderText("按背景资源名搜索" if kind in dynamic_assets.IMAGE_DIRS else "按资源名搜索，例如 nabulesi_3")
         self.catalog = self.asset_catalogs.get(kind, ())
         self.mode.button(0).setChecked(True)
         self.check_all.setChecked(False)
-        self.section_name.setText({"painting":"静态立绘", "spine":"Spine 动态立绘", "live2d":"Live2D 模型"}[kind])
+        self.section_name.setText({"painting":"静态立绘", "spine":"Spine 动态立绘", "live2d":"Live2D 模型","background":"过场与剧情背景","startup":"启动与登录图"}[kind])
         self.steps[1].setText("02    选择模式" if kind=="painting" else "02    选择素材")
         self.apply_scope()
         self.filter_names()
@@ -418,7 +421,10 @@ class Window(QWidget):
                 names.append(f"{name}__layer__图层名.png")
             self.example.setText("报告文件：素材检查报告.txt" if check else
                 "文件示例\n"+"\n".join(names)+"\n\n重新导出会刷新该立绘的主图、旧表情和分层文件。其他文件保留。")
-            if self.asset_kind != "painting":
+            if self.asset_kind in dynamic_assets.IMAGE_DIRS:
+                stem = name.replace("~", "~~")
+                self.example.setText(f"保存到所选目录：{stem}.png\n同包多图追加 ~2、~3 等后缀；再次导出刷新该资源的 PNG。")
+            elif self.asset_kind != "painting":
                 info = "骨骼、图集描述、PNG 贴图" if self.asset_kind=="spine" else "MOC3 模型、PNG 贴图、物理配置、原始 AnimationClip、motion3.json 和 model3.json"
                 self.example.setText(f"{info}。清单记录每个文件的来源。\n输出：{dynamic_assets.SOURCES[self.asset_kind]}/{name}/；重复导出另存新目录。")
         self.next.setText(("下一步","下一步","开始检查" if check else ("开始导出" if self.asset_kind!="painting" else "开始还原"),"返回设置")[step])
@@ -439,7 +445,7 @@ class Window(QWidget):
             names = self.target_names()
             if names:
                 self.start(Job(self.root,Path(self.out.text().strip()).resolve(),names,
-                               self.mode.checkedId()==2,self.format.currentIndex()==0,self.layers.isChecked(),asset_kind=self.asset_kind))
+                               self.mode.checkedId()==2,self.format.currentIndex()==0,self.layers.isChecked(),asset_kind=self.asset_kind,hide_hx=self.hide_hx.isChecked()))
         else:
             self.page(2 if i==3 else i+1)
 
@@ -516,7 +522,7 @@ class Window(QWidget):
             self.close()
 
     def allowed(self, name):
-        return not (self.hide_hx.isChecked() and name.casefold().endswith("_hx"))
+        return not (self.hide_hx.isChecked() and (name.casefold().endswith("_hx") or name.casefold().startswith("loadingbg_hx__")))
 
     def target_names(self):
         if self.all_names():
@@ -527,7 +533,7 @@ class Window(QWidget):
         self.names = tuple(n for n in self.catalog if self.allowed(n))
         if self.root:
             face = "已找到表情目录" if (self.root/"paintingface").is_dir() else "缺少表情目录"
-            self.info.setText(f"{self.root}\n可用 {len(self.names)} 套 · 隐藏 {len(self.catalog)-len(self.names)} 套 · {face}")
+            self.info.setText(f"{self.root}\n可用 {len(self.names)} 套 · 隐藏 {len(self.catalog)-len(self.names)} 套" + (f" · {face}" if self.asset_kind=="painting" else ""))
 
     def hx_changed(self, enabled):
         self.preferences.setValue("hide_hx", enabled)
@@ -544,7 +550,7 @@ class Window(QWidget):
 
     def update_stats(self):
         counts = Counter(r.status for r in self.results.values() if self.allowed(r.name))
-        self.stats.setText("     ".join(f"{k} {counts[k]}" for k in ("成功","部分完成","失败","取消")))
+        self.stats.setText("     ".join(f"{k} {counts[k]}" for k in ("成功","已导出（有说明）","部分完成","失败","取消")))
 
     def filter_names(self,*_):
         key = self.search.text().strip().casefold()
@@ -554,8 +560,9 @@ class Window(QWidget):
         for name in self.names:
             if key in name.casefold():
                 item = QListWidgetItem(name)
-                item.setIcon(self.thumbnails.blank)
-                item.setSizeHint(self.thumbnails.size.grownBy(QMargins(0,4,0,4)))
+                if self.asset_kind not in dynamic_assets.IMAGE_DIRS:
+                    item.setIcon(self.thumbnails.blank)
+                    item.setSizeHint(self.thumbnails.size.grownBy(QMargins(0,4,0,4)))
                 item.setCheckState(Qt.CheckState.Checked if name in self.selected else Qt.CheckState.Unchecked)
                 self.list.addItem(item)
         self.list.blockSignals(False)
@@ -602,11 +609,11 @@ class Window(QWidget):
             if r.status!="取消" or r.stage!="尚未开始":
                 item=QTreeWidgetItem([r.name,r.status,r.stage])
                 self.tree.addTopLevelItem(item)
-                if r.detail:
-                    child=QTreeWidgetItem([r.detail])
+                for line in r.detail.splitlines():
+                    child=QTreeWidgetItem([line])
                     item.addChild(child)
                     child.setFirstColumnSpanned(True)
-                    child.setToolTip(0,r.detail)
+                    child.setToolTip(0,line)
             total=len(self.last_job.names)
             self.stats.setText(f"本轮已处理 {event.done} / {total}")
             target=round(1000*event.done/total)

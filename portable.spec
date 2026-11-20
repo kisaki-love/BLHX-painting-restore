@@ -35,4 +35,4 @@ assert any(n == "UnityPy.export" and str(graphics_root) in path for n,path,_ in 
 pyz = PYZ(a.pure)
 gui = EXE(pyz, a.scripts, [], exclude_binaries=True, name="PaintingRestore", console=False, upx=False)
 cli = EXE(pyz, a.scripts, [], exclude_binaries=True, name="PaintingRestore-CLI", console=True, upx=False)
-dist = COLLECT(gui, cli, a.binaries, a.datas, name="PaintingRestore-v2.0-preview", upx=False)
+dist = COLLECT(gui, cli, a.binaries, a.datas, name="PaintingRestore-v2.1", upx=False)

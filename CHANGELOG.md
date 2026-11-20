@@ -2,6 +2,18 @@
 
 > 最新版本在最前面。v1.0 是首个公开发布，里面也记录了开发过程中修掉的关键问题。
 
+## v2.1 — Live2D motion conversion and background export
+
+- Export model opacity and supported lip-sync and eye-blink tracks. Resolve parameter and part IDs against the source prefab and compiled model. Keep the original Unity clips and report missing targets per motion.
+- Export scene backgrounds, loading art and login screens directly as PNGs. Additional textures use numbered suffixes.
+- Download the Windows x64 ZIP, extract the whole folder and run `PaintingRestore.exe`. The CLI is included.
+
+### 中文
+
+- Live2D 动作转换支持模型透明度、可匹配的口型与眨眼控制器；按源预制体与编译模型核对参数和部件。无对应目标、空动作和未解决的绑定在清单中分别列出，原始 AnimationClip 保留。
+- 新增过场与剧情背景、启动与登录图导出。PNG 平铺保存到所选目录，同包多张贴图追加编号。
+- Windows x64 便携包完整解压后运行 `PaintingRestore.exe`，命令行入口为 `PaintingRestore-CLI.exe`。
+
 ## v2.0-preview — Windows x64
 
 Restore paintings or extract Spine and Live2D assets through three desktop entries. The portable ZIP includes the GUI and CLI. Live2D exports preserve original Unity AnimationClips, convert supported curves to Cubism motion3 files and register the motions in the generated model3 entry.

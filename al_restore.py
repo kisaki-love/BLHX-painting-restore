@@ -19,7 +19,7 @@ def main():
     ap.add_argument("--unpacked", nargs=3, metavar=("TEXDIR", "MESHDIR", "OUTDIR"),
                     help="仅用解包好的 Texture2D/Mesh 目录做分层还原")
     ap.add_argument("--gui", action="store_true", help="打开图形界面")
-    ap.add_argument("--asset-type",choices=("painting","spine","live2d"),default="painting",help="静态立绘或动态素材导出")
+    ap.add_argument("--asset-type",choices=("painting","spine","live2d","background","startup"),default="painting",help="立绘、动态素材、过场背景或启动图导出")
     a = ap.parse_args()
 
     if a.gui or len(sys.argv) == 1:
@@ -37,7 +37,7 @@ def main():
         def report(event):
             if event.kind == "result":
                 print(f"[{event.done}/{len(names)}] {event.result}", flush=True)
-        return int(any(r.status != "成功" for r in execute(job, report)))
+        return int(any(r.status not in {"成功", "已导出（有说明）"} for r in execute(job, report)))
     ap.print_help()
 
 

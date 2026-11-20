@@ -6,10 +6,64 @@ import re
 import rendering
 import cubism_motion
 
-SOURCES = {"spine": "spinepainting", "live2d": "live2d"}
+SOURCES = {"spine": "spinepainting", "live2d": "live2d", "background": "background", "startup": "startup"}
+IMAGE_DIRS = {"background": ("bg", "loadingbg", "loadingbg_hx", "newloading"),
+              "startup": ("loadingbg", "loadingbg_hx", "updatebg")}
+
+
+def image_catalog(root, kind):
+    names = []
+    for directory in IMAGE_DIRS[kind]:
+        source = root / directory
+        if not source.is_dir():
+            continue
+        for path in source.iterdir():
+            if not path.is_file() or path.name.startswith(".") or path.name.endswith((".manifest", "_res")):
+                continue
+            if directory.startswith("loadingbg") and path.name.lower().startswith("login") != (kind == "startup"):
+                continue
+            names.append(f"{directory}__{path.name}")
+    return tuple(sorted(names))
+
+
+def export_background(job, name, stage, folder):
+    directory, _, bundle = name.partition("__")
+    if directory not in IMAGE_DIRS[job.asset_kind] or not bundle:
+        raise ValueError(f"无法识别背景资源：{name}")
+    path = job.root / directory / bundle
+    stage("读取背景图包")
+    env, objects = rendering._load_ab(str(path))
+    paths = {pointer.path_id: asset for asset, pointer in env.container.items()
+             if pointer.type.name == "Texture2D"}
+    textures = []
+    for obj in objects.values():
+        if obj.type.name != "Texture2D":
+            continue
+        parts = Path(paths.get(obj.path_id, "")).parts
+        region = next((parts[i+1] for i, part in enumerate(parts[:-1])
+                       if part.casefold() == "rescategories"), "")
+        if job.hide_hx and region.casefold() in {"hx", "fanhx"}:
+            continue
+        tex = obj.read()
+        label = tex.m_Name.casefold()
+        # Dynamic loading prefabs have a dedicated background and separate character/UI layers.
+        rank = (not region, label == f"tex_{bundle}_bg".casefold() or label == bundle.casefold(),
+                label.endswith("_bg"), tex.m_Width * tex.m_Height, -obj.path_id)
+        textures.append((rank, tex))
+    if not textures:
+        raise ValueError("没有可导出的背景贴图。")
+    stem = name.replace("~", "~~")
+    for index, (_, tex) in enumerate(sorted(textures, key=lambda entry: entry[0], reverse=True), 1):
+        stage(f"保存 PNG {index}/{len(textures)} · {tex.m_Name}")
+        suffix = "" if index == 1 else f"~{index}"
+        with tex.image as image:
+            image.save(folder / f"{stem}{suffix}.png", format="PNG")
+    return []
 
 
 def catalog(root, kind):
+    if kind in IMAGE_DIRS:
+        return image_catalog(root, kind)
     directory = root / SOURCES[kind]
     if not directory.is_dir():
         return ()
@@ -69,8 +123,12 @@ def spine_asset_scope(primary, loaded):
     return selected
 
 
-def export_assets(job, name, stage, folder):
+def export_assets(job, name, stage, folder, notes=None):
+    if notes is None:
+        notes = []
     kind = job.asset_kind
+    if kind in IMAGE_DIRS:
+        return export_background(job, name, stage, folder)
     directory = job.root / SOURCES[kind]
     bundles = [directory / name]
     for extra in (directory / (name + "_res"), job.root / "live2dmask" / name):
@@ -94,6 +152,7 @@ def export_assets(job, name, stage, folder):
     files, problems = [], []
     textures, mocs, physics, poses, expressions = {}, [], [], [], []
     motions = {}
+    effect_groups = {}
     has_skeleton = has_atlas = False
     for bundle in bundles:
         stage("读取资源包 · " + bundle.name)
@@ -151,14 +210,33 @@ def export_assets(job, name, stage, folder):
                         if bindings is None:
                             bindings = cubism_motion.binding_table(objects)
                         motion, skipped = cubism_motion.convert(obj, bindings)
+                        if skipped:
+                            files[-1]["binding_diagnostics"] = skipped
+                            absent = []
+                            for component, details in skipped.items():
+                                if component == "empty":
+                                    notes.append(f"{label}：源动作没有绑定，已保留原始文件")
+                                elif component.startswith("源模型无目标 "):
+                                    absent.append(component.split(" ", 1)[1])
+                                elif component.startswith("预制体路径不存在 "):
+                                    notes.append(f"{label}：{len(details)} 条绑定的路径不在源预制体中，模型目标已完整核对")
+                                elif component.startswith("控制器无目标 "):
+                                    notes.append(f"{label}：控制器没有绑定参数，已保留原始轨道")
+                                else:
+                                    problems.append(f"{label}：{component} 有 {len(details)} 条绑定未转换")
+                            if absent:
+                                notes.append(f"{label}：当前预制体和模型均无对应的 {len(absent)} 个编号目标，详见清单")
+                        if motion is None:
+                            continue
+                        for curve in motion["Curves"]:
+                            if curve["Target"] == "Model" and curve["Id"] in bindings.groups:
+                                effect_groups[curve["Id"]] = bindings.groups[curve["Id"]]
                         filename = relative.name.removesuffix(".animclip.bin") + ".motion3.json"
                         motion_path = Path("motions") / filename
                         (folder / "motions").mkdir(exist_ok=True)
                         (folder / motion_path).write_text(json.dumps(motion,allow_nan=False,separators=(",",":")),encoding="utf8")
                         motions.setdefault(label,[]).append({"File":motion_path.as_posix()})
                         files.append(dict(file=motion_path.as_posix(),type="CubismMotion",source_clip=ref))
-                        if skipped:
-                            problems.append(f"{label}：跳过 {skipped} 条非 Cubism 或未匹配绑定")
                     except Exception as exc:
                         problems.append(f"{label}：已保留原始动作，转换失败：{exc}")
                 if mask:
@@ -189,10 +267,14 @@ def export_assets(job, name, stage, folder):
             if len(poses)==1: refs["Pose"]=poses[0]
             if expressions: refs["Expressions"]=expressions
             if motions: refs["Motions"]=motions
-            write_json(folder/(name+".model3.json"),{"Version":3,"FileReferences":refs})
+            model = {"Version":3,"FileReferences":refs}
+            if effect_groups:
+                model["Groups"] = [dict(Target="Parameter", Name=effect, Ids=ids)
+                                   for effect, ids in sorted(effect_groups.items())]
+            write_json(folder/(name+".model3.json"),model)
         else:
             problems.append("模型或贴图索引不完整，无法生成可靠的 model3.json。")
     elif not (has_skeleton and has_atlas and any(f["type"]=="Texture2D" for f in files)):
         problems.append("缺少骨骼、图集描述或贴图。")
-    write_json(folder/"manifest.json",dict(kind=kind, files=files, issues=problems))
+    write_json(folder/"manifest.json",dict(kind=kind, files=files, issues=problems, notes=notes))
     return problems

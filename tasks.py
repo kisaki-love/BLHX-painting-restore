@@ -24,7 +24,7 @@ def locate(folder):
         raise ValueError("请选择游戏包根目录、files 或 AssetBundles。")
     directory = Path(folder).expanduser().resolve()
     for root in (directory, directory / "AssetBundles", directory / "files" / "AssetBundles"):
-        if any((root / d).is_dir() for d in ("painting", "live2d", "spinepainting")):
+        if any((root / d).is_dir() for d in ("painting", "live2d", "spinepainting", *dynamic_assets.IMAGE_DIRS["background"], "updatebg")):
             return root
     raise ValueError(f"请选择包含立绘资源的 AssetBundles 根目录。{IMPORT_EXAMPLE}")
 
@@ -55,6 +55,7 @@ class Job:
     align: bool = True
     report_name: str = "素材检查报告.txt"
     asset_kind: str = "painting"
+    hide_hx: bool = False
 
 
 @dataclass(frozen=True)
@@ -112,14 +113,17 @@ def output_lock(target):
         yield
 
 
-def publish(stage, target, name):
+def publish(stage, target, name, *, flat_images=False):
     """Replace only files owned by this exporter; undo replacements on write errors."""
     if target.is_symlink() or getattr(target, "is_junction", lambda: False)():
         raise ValueError("输出子目录是链接，请选择普通文件夹。")
     if not target.exists():
         stage.rename(target)
         return
-    managed = re.compile(re.escape(name) + r"(?:_exp(?:_[1-9][0-9]*)?|__layer__.+)?\.png")
+    if flat_images:
+        managed = re.compile(re.escape(name.replace("~", "~~")) + r"(?:~(?:[2-9]|[1-9][0-9]+))?\.png")
+    else:
+        managed = re.compile(re.escape(name) + r"(?:_exp(?:_[1-9][0-9]*)?|__layer__.+)?\.png")
     old = [p for p in target.iterdir() if managed.fullmatch(p.name)]
     backup = stage.parent / "previous"
     backup.mkdir()
@@ -192,7 +196,7 @@ def execute(job, notify=lambda event: None, stopped=lambda: False):
         raise ValueError("未选择立绘。")
     root = job.root.resolve()
     output = job.output.resolve()
-    if job.asset_kind != "painting":
+    if job.asset_kind in ("spine", "live2d"):
         output = (output / dynamic_assets.SOURCES[job.asset_kind]).resolve()
     if output == root or root in output.parents:
         raise ValueError("请选择游戏资源目录之外的输出目录。")
@@ -200,6 +204,7 @@ def execute(job, notify=lambda event: None, stopped=lambda: False):
     for index, name in enumerate(job.names):
         engine._AB_CACHE.clear()
         phase = "准备"
+        notes = []
         def stage(label):
             nonlocal phase
             if stopped():
@@ -217,12 +222,16 @@ def execute(job, notify=lambda event: None, stopped=lambda: False):
                 with staging(output) as temp:
                     folder = Path(temp) / "new"
                     folder.mkdir()
-                    extractor = process if job.asset_kind == "painting" else dynamic_assets.export_assets
-                    issues = extractor(job, name, stage, folder)
+                    if job.asset_kind == "painting":
+                        issues = process(job, name, stage, folder)
+                    else:
+                        issues = dynamic_assets.export_assets(job, name, stage, folder, notes)
                     stage("提交文件")
                     with output_lock(output / name):
                         if job.asset_kind == "painting":
                             publish(folder, output / name, name)
+                        elif job.asset_kind in dynamic_assets.IMAGE_DIRS:
+                            publish(folder, output, name, flat_images=True)
                         else:
                             target = output / name
                             suffix = 1
@@ -230,7 +239,8 @@ def execute(job, notify=lambda event: None, stopped=lambda: False):
                                 suffix += 1
                                 target = output / f"{name} ({suffix})"
                             folder.rename(target)
-            result = Result(name, "部分完成" if issues else "成功", phase, "；".join(issues))
+            status = "部分完成" if issues else ("已导出（有说明）" if notes else "成功")
+            result = Result(name, status, phase, "\n".join(issues + notes))
         except Cancelled:
             for pending in job.names[index:]:
                 result = Result(pending, "取消", phase if pending == name else "尚未开始")

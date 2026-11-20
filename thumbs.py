@@ -61,7 +61,7 @@ class Thumbnails:
             self.pending = None
             if len(self.cache)>256:
                 self.cache.popitem(last=False)
-        if not self.list.isVisible() or not self.window.root or not self.list.count():
+        if self.window.asset_kind in ("background", "startup") or not self.list.isVisible() or not self.window.root or not self.list.count():
             return
         first = max(0,self.list.indexAt(QPoint(2,2)).row())
         last = self.list.indexAt(QPoint(2,self.list.viewport().height()-2)).row()
