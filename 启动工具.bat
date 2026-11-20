@@ -20,10 +20,10 @@ if not defined PYEXE (
 )
 
 echo Using: !PYEXE!
-"!PYEXE!" -c "import PIL, numpy, UnityPy, cv2" >nul 2>nul
+"!PYEXE!" -c "import PIL, numpy, UnityPy, cv2, PySide6.QtWidgets" >nul 2>nul
 if errorlevel 1 (
   echo Installing dependencies: pillow numpy UnityPy opencv-python-headless ...
-  "!PYEXE!" -m pip install -U pillow numpy UnityPy opencv-python-headless
+  "!PYEXE!" -m pip install -r "%~dp0requirements.txt"
   if errorlevel 1 (
     echo [ERROR] pip install failed. Try: pip install -U pillow numpy UnityPy opencv-python-headless
     pause

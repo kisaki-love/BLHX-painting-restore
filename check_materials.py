@@ -24,7 +24,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import UnityPy  # noqa: E402
 UnityPy.config.FALLBACK_UNITY_VERSION = "2022.3.0"
-from al_restore import check_materials_report  # noqa: E402
+from pathlib import Path
+from tasks import Job, locate, choose, execute  # noqa: E402
 
 SAVED = os.path.join(HERE, "素材路径.txt")
 
@@ -85,9 +86,13 @@ def main():
 
     only = [s.strip() for s in a.only.split(",")] if a.only else None
     out_txt = a.out or os.path.join(HERE, "素材缺失清单.txt")
-    r = check_materials_report(b, out_txt=out_txt, only=only, jobs=a.jobs)
-    print("检查完毕：真缺主图层素材 %d 个 / 共 %d 个" % (len(r["real"]), r["total"]))
-    return 0
+    root = locate(b)
+    report = Path(out_txt).resolve()
+    results = execute(Job(root, report.parent, choose(root, only, a.jobs),
+                          check=True, report_name=report.name))
+    for result in results:
+        print(result)
+    return int(any(result.status != "成功" for result in results))
 
 
 if __name__ == "__main__":

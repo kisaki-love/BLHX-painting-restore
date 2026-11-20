@@ -2,6 +2,14 @@
 
 > 最新版本在最前面。v1.0 是首个公开发布，里面也记录了开发过程中修掉的关键问题。
 
+## v2.0-preview — Windows x64
+
+Restore paintings or extract Spine and Live2D assets through three desktop entries. The portable ZIP includes the GUI and CLI. Live2D exports preserve original Unity AnimationClips, convert supported curves to Cubism motion3 files and register the motions in the generated model3 entry.
+
+三个入口分别处理静态立绘、Spine 和 Live2D。桌面端支持搜索、多选、素材检查、取消与失败重试。Live2D 同时导出原始动作与可供 Cubism Viewer 读取的转换动作；Spine 按选中模型提取素材。v2.0 新增自有代码和文档采用非商业学习研究许可。
+
+**Windows:** Extract the full ZIP and run `PaintingRestore.exe`. 完整解压便携包，双击 `PaintingRestore.exe`。游戏专有互动和语音菜单需另外配置。
+
 ## v1.2 — Expression Rendering / 表情合成优化
 
 ### English

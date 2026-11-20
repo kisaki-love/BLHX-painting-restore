@@ -1,21 +1,14 @@
-MIT License
+# 非商业学习研究许可
 
 Copyright (c) 2026 Tsukiyashirokisaki (@Tsukiyashirokisakilove)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+本许可适用于 v2.0 新增的自有代码和文档。继承自 v1.2 的部分沿用 LICENSE-v1.2-MIT.txt 内的 MIT 许可。对于本项目中由上述权利人有权许可的代码和文档，权利人允许任何人仅为自身非商业学习或研究而下载、复制、阅读、运行和修改。在依本许可制作的副本中，应保留本版权声明及许可文本。
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+商业使用须事先取得权利人的单独书面许可，包括出售本工具或其修改版、以本工具提供收费服务，或将其集成到商业产品或服务中。
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+本许可仅涉及项目自身的代码和文档。游戏资源、还原图像中所含的游戏美术及第三方软件分别适用其权利人的授权和适用法律。本许可不授予这些第三方内容的使用权。
+
+本许可适用于明确附带本许可的版本。此前以其他许可取得的版本继续适用原许可。适用法律另有规定的，从其规定。
+
+在法律允许的范围内，本软件按现状提供，无任何明示或默示担保。
+

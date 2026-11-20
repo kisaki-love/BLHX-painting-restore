@@ -1,61 +1,55 @@
 # Azur Lane Painting Restore
 
-**v1.2** · Python 3.10+ · Windows / Linux / macOS · MIT
+Restore static illustrations and export Spine or Live2D assets from your local *Azur Lane* game files. Version 2.0 Preview includes a Windows x64 desktop app and a command-line exporter. The interface is in Simplified Chinese.
 
-[阅读中文简介](#碧蓝航线立绘还原工具)
+**[Download the free Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.0-preview/PaintingRestore-v2.0-preview-windows-x64.zip)** · [Release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.0-preview) · [中文说明](#碧蓝航线立绘还原工具)
 
-Reconstruct static character illustrations from local *Azur Lane* AssetBundles. The tool assembles texture fragments using the game’s meshes and layer layout, preserves canvas size and transparency, and exports the artwork and its facial expressions as PNG files.
+![Resource selection in the Windows desktop app](docs/界面.png)
 
-### Quick start
+| Entry | Output |
+|---|---|
+| Painting | Full-size transparent artwork, numbered expression variants and optional layers. Identical source faces are skipped before composition. |
+| Spine | Skeleton, atlas and texture files extracted for the selected model. |
+| Live2D | Compiled model, texture atlases, original Unity animation clips and converted Cubism motions. Physics, poses and expressions are included when available. |
 
-1. On Windows, run `启动工具.bat`. On Linux or macOS, run `pip install -r requirements.txt`, then `./run.sh --gui`. The graphical interface requires Tkinter.
-2. Select the `AssetBundles` folder containing `painting/` and choose an output folder. Some illustrations also need `paintingface/` for their default face or additional expressions.
-3. Click **扫描 / 刷新** (Scan), select the illustrations you want, then click **开始还原** (Restore).
+### Get started
 
-Each illustration has its own output folder. The main file is `<name>.png`. Additional expressions start at `<name>_exp_1.png`. Re-exporting refreshes the numbered files and removes the legacy `_exp.png` copy. Using `--no-face` clears previously exported expressions for that illustration.
+1. Extract the entire ZIP and run `PaintingRestore.exe`. Keep the adjacent `_internal` directory. The portable build includes Python and its dependencies.
+2. Choose a resource type and select the game package folder, `files`, or `AssetBundles`. For example, select `com.bilibili.azurlane/files/AssetBundles` so that sibling resource folders can be found.
+3. Search for a skin, select it, choose an output directory and start the task. Expand a result to see missing assets or conversion issues.
+
+For Live2D, open the generated `<skin>.model3.json` in Cubism Viewer. The exporter keeps the serialized clips in `AnimationClip/` and writes supported parameter and part-opacity curves to `motions/*.motion3.json`. See `manifest.json` for skipped bindings and conversion errors. The game’s touch rules, voice menus and EX Studio interactions require separate configuration.
 
 ### Command line
 
-```bash
-python al_restore.py --bundles "/path/to/AssetBundles" --out "./restored" --only "nabulesi_3,banerwei_4"
+```powershell
+.\PaintingRestore-CLI.exe --asset-type live2d --bundles "D:\Game\files\AssetBundles" --out "D:\Exports" --only nabulesi_3
 ```
 
-Omit `--only` to restore all paintings. Use `--layer` to export individual layers, `--jobs N` to process the first N paintings, and `--help` for all options.
-
-### Troubleshooting and use
-
-If a layer is missing, run `python check_materials.py --bundles "/path/to/AssetBundles"` to check for missing texture packs. Canvas dimensions come from the game, and artwork can vary between asset versions.
-
-The tool’s code is available under the [MIT License](LICENSE), which permits commercial use. Keep the copyright and permission notices when distributing copies or substantial portions of the software. Rights to the game artwork belong to their respective holders. Use and share restored images only as their permissions allow.
+Use `--asset-type painting` or `--asset-type spine` for the other modes. Run `--help` for all options. For a source checkout with Python 3.12, run `python -m pip install -r requirements.txt`, then `python al_restore.py --gui`.
 
 ## 碧蓝航线立绘还原工具
 
-从《碧蓝航线》本地 AssetBundles 资源中还原静态角色立绘。工具按照游戏中的网格和图层布局拼合贴图碎片，保留原始画布尺寸与透明区域，将主图和表情差分导出为 PNG。
+从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。**软件免费，请勿付费购买。** [下载 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.0-preview/PaintingRestore-v2.0-preview-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases)
 
-### 快速开始
+1. 完整解压 ZIP，双击 `PaintingRestore.exe`。保留同目录的 `_internal` 文件夹，无需另装 Python。
+2. 选择「静态立绘」「Spine 动态立绘」或「Live2D 模型」，拖入游戏包根目录、`files` 或 `AssetBundles`。目录示例为 `com.bilibili.azurlane/files/AssetBundles`。
+3. 搜索并勾选资源，设置输出目录后开始。勾选状态会跨搜索保留；启用「隐藏 _hx 和谐版」会从本次处理范围排除这些变体。任务结束后可展开查看问题或重试失败项。
 
-1. Windows 双击 `启动工具.bat`。Linux 或 macOS 先运行 `pip install -r requirements.txt`，再运行 `./run.sh --gui`。图形界面需要 Tkinter。
-2. 选择含 `painting/` 的 AssetBundles 根目录，并指定输出目录。部分立绘还需要 `paintingface/` 来补全默认面部或生成表情差分。
-3. 点击 **扫描 / 刷新**，选中立绘，再点击 **开始还原**。
+| 入口 | 能导出什么 |
+|---|---|
+| 静态立绘 | 主图、从 `_exp_1.png` 开始编号的表情差分，可选分层 PNG。每套底图只合成一次，贴脸前跳过重复源表情。 |
+| Spine | 骨骼、图集描述及贴图。按模型引用从共享资源包提取所选变体的素材。 |
+| Live2D | `.moc3`、贴图、原始 `.animclip.bin` 和转换后的 `.motion3.json`。模型和贴图索引完整时生成 `.model3.json` 入口，物理、姿势、表情及遮罩按资源提供。 |
 
-每套立绘保存到同名文件夹。例如，`nabulesi_3.png` 是主图，`nabulesi_3_exp_1.png` 至 `nabulesi_3_exp_13.png` 是这套立绘的 13 张表情差分。重新导出时会清理旧版 `_exp.png` 副本和多余编号。使用 `--no-face` 重新导出时，会清空该立绘之前导出的表情。
+要预览 Live2D，请在 Cubism Viewer 中打开导出目录里的 `<皮肤名>.model3.json`。动作转换情况记录在 `manifest.json`。游戏点击、拖动、语音菜单及 EX Studio 互动需另外配置。命令行参数见上方示例或 `PaintingRestore-CLI.exe --help`。
 
-### 命令行
+### License / 使用许可
 
-```powershell
-python al_restore.py --bundles "D:\Game\AzurLane\AssetBundles" --out "D:\还原输出" --only "nabulesi_3,banerwei_4"
-```
+New v2.0 code and documentation are licensed for non-commercial study and research. Code inherited from v1.2 retains its MIT license. Game artwork belongs to its respective rights holders. The portable download includes third-party notices.
 
-省略 `--only` 即可还原全部立绘。`--layer` 同时导出各图层，`--jobs N` 只处理前 N 套立绘，`--help` 列出完整参数。
-
-### 素材检查与使用说明
-
-若成品缺少背景或某个图层，可运行 `check_materials.py` 检查缺少的贴图包。画布尺寸由游戏资源决定，不同版本的素材可能得到不同画面。
-
-工具代码采用 [MIT 许可证](LICENSE)，允许商业使用。分发软件副本或其重要部分时，请保留版权声明和许可声明。游戏美术素材的权利归各权利人所有，使用或分享还原图片时，请遵循权利人的授权。
+v2.0 新增自有代码和文档仅供非商业学习研究。继承自 v1.2 的代码沿用 MIT 许可；游戏素材权利归各权利人。便携包内附第三方许可。[v2.0 许可](LICENSE) · [v1.2 MIT 许可](LICENSE-v1.2-MIT.txt) · [更新记录](CHANGELOG.md)
 
 ### Credits / 致谢
 
-Developed with AI assistance. The approach to assembling artwork layers draws on [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt).
-
-本工具由 AI 辅助开发，立绘图层的拼合思路参考了 [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)。
+Developed with AI assistance. The approach to composing artwork layers draws on ALPA. 本工具由 AI 辅助开发，立绘图层的拼合思路参考了 [ALPA](https://github.com/Deficuet/AzurLanePaintingAnalysis-Kt)。
