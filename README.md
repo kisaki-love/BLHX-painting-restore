@@ -2,7 +2,7 @@
 
 Restore static illustrations and export Spine or Live2D assets from your local *Azur Lane* game files. This repository contains the v2.2 source for a Windows x64 desktop app and a command-line exporter. The interface is in Simplified Chinese.
 
-**[Download the v2.1 Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip)** · [v2.1 release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.1) · [Changelog](CHANGELOG.md) · [中文说明](#碧蓝航线立绘还原工具)
+**[Download the v2.2 Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.2/PaintingRestore-v2.2-windows-x64.zip)** · [v2.2 release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.2) · [Changelog](CHANGELOG.md) · [中文说明](#碧蓝航线立绘还原工具)
 
 ![Resource selection in the Windows desktop app](docs/界面.png)
 
@@ -34,7 +34,7 @@ Other asset types include `painting`, `spine`, `background`, and `startup`. Run 
 
 ## 碧蓝航线立绘还原工具
 
-从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。当前源码版本为 v2.2。**软件免费，请勿付费购买。** [下载 v2.1 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases) · [更新记录](CHANGELOG.md)
+从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。当前源码版本为 v2.2。**软件免费，请勿付费购买。** [下载 v2.2 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.2/PaintingRestore-v2.2-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases) · [更新记录](CHANGELOG.md)
 
 1. 完整解压 ZIP，双击 `PaintingRestore.exe`。保留同目录的 `_internal` 文件夹，无需另装 Python。
 2. 在首页选择资源类型，拖入游戏包根目录、`files` 或 `AssetBundles`。目录示例为 `com.bilibili.azurlane/files/AssetBundles`。
