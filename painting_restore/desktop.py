@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QGraphicsOpacityEffect, QAbstractItemView, QScrollArea, QSizePolicy
 )
 
-from . import dynamic_assets
+from . import __version__, dynamic_assets
 from .tasks import IMPORT_EXAMPLE, Job, choose, execute, locate
 from .thumbs import Thumbnails
 
@@ -113,7 +113,7 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.auto_open = False
-        self.setWindowTitle("碧蓝航线立绘还原工具 v2.1")
+        self.setWindowTitle(f"碧蓝航线立绘还原工具 v{__version__}")
         self.setWindowIcon(icon())
         self.setAcceptDrops(True)
         self.resize(990, 675)
@@ -145,7 +145,7 @@ class Window(QWidget):
         mark.setPixmap(self.windowIcon().pixmap(42,42))
         nav.addWidget(mark)
         nav.addWidget(label("Painting Restore","brand"))
-        nav.addWidget(label("v2.1  ·  Windows x64","hint"))
+        nav.addWidget(label(f"v{__version__}  ·  Windows x64","hint"))
         self.section_name = label("", "hint")
         nav.addWidget(self.section_name)
         self.home_button = button("返回功能首页", lambda: self.screens.setCurrentIndex(0))
@@ -164,7 +164,7 @@ class Window(QWidget):
         self.hide_hx.setToolTip("从列表、检查和导出中排除名称以 _hx 结尾的立绘")
         self.hide_hx.toggled.connect(self.hx_changed)
         nav.addWidget(self.hide_hx)
-        nav.addWidget(label("非商业学习研究版","hint"))
+        nav.addWidget(label("个人非商业使用","hint"))
         outer.addWidget(side)
         body = QVBoxLayout()
         outer.addLayout(body,1)

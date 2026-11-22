@@ -3,8 +3,10 @@ import os
 import sys
 import shutil
 import importlib.util
+from runpy import run_path
 from PyInstaller.utils.hooks import collect_all, collect_data_files
 root = Path(SPECPATH)
+version = run_path(str(root / "painting_restore" / "__init__.py"))["__version__"]
 # Resolve Windows DLLs only from this Python and Windows, not unrelated host apps.
 if os.name == "nt":
     windows = Path(os.environ["WINDIR"])
@@ -35,6 +37,6 @@ assert any(n == "UnityPy.export" and str(graphics_root) in path for n,path,_ in 
 pyz = PYZ(a.pure)
 gui = EXE(pyz, a.scripts, [], exclude_binaries=True, name="PaintingRestore", console=False, upx=False)
 cli = EXE(pyz, a.scripts, [], exclude_binaries=True, name="PaintingRestore-CLI", console=True, upx=False)
-distribution_name = "PaintingRestore-v2.1"
+distribution_name = f"PaintingRestore-v{version}"
 dist = COLLECT(gui, cli, a.binaries, a.datas, name=distribution_name, upx=False)
 shutil.copy2(root / "LICENSE", Path(DISTPATH) / distribution_name / "LICENSE")

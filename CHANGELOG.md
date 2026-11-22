@@ -2,10 +2,15 @@
 
 > 最新版本在最前面。v1.0 是首个公开发布，里面也记录了开发过程中修掉的关键问题。
 
-## 未发布
+## v2.2 — Project organization and license
 
-- 应用内部模块归入 `painting_restore/`，现有源码启动方式和命令行参数继续可用。
-- 项目自有代码和文档统一采用根目录的非商业学习研究许可。后续 Windows 便携构建自动随附该许可。
+- The application modules are in `painting_restore/`. The desktop app, CLI and Windows build share one version value.
+- Windows builds include the v2.2 license for personal, non-commercial use of the tool.
+
+### 中文
+
+- 应用内部模块归入 `painting_restore/`。桌面端、命令行和 Windows 构建统一读取版本号。
+- Windows 构建附带 v2.2 工具使用许可，说明个人非商业使用的权限与游戏资源的授权范围。
 
 ## v2.1 — Live2D motion conversion and background export
 

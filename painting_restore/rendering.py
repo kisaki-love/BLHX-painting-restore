@@ -46,6 +46,8 @@ import time
 import traceback
 import warnings
 
+from . import __version__ as VERSION
+
 try:
     import numpy as np
     from PIL import Image, ImageFile
@@ -71,7 +73,6 @@ except Exception:          # pragma: no cover
 # ----------------------------------------------------------------------------
 # 常量
 # ----------------------------------------------------------------------------
-VERSION = "2.1"
 APP_TITLE = "Azur Lane Painting Restore"
 
 Y_BIAS = 1  # 与官方还原结果对齐的 1 像素纵向补偿(实测)

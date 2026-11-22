@@ -1,8 +1,8 @@
 # Azur Lane Painting Restore
 
-Restore static illustrations and export Spine or Live2D assets from your local *Azur Lane* game files. Version 2.1 includes a Windows x64 desktop app and a command-line exporter. The interface is in Simplified Chinese.
+Restore static illustrations and export Spine or Live2D assets from your local *Azur Lane* game files. This repository contains the v2.2 source for a Windows x64 desktop app and a command-line exporter. The interface is in Simplified Chinese.
 
-**[Download the free Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip)** · [Release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.1) · [Changelog](CHANGELOG.md) · [中文说明](#碧蓝航线立绘还原工具)
+**[Download the v2.1 Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip)** · [v2.1 release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.1) · [Changelog](CHANGELOG.md) · [中文说明](#碧蓝航线立绘还原工具)
 
 ![Resource selection in the Windows desktop app](docs/界面.png)
 
@@ -22,7 +22,7 @@ Background and login images are saved directly in the chosen folder. Additional 
 2. Choose a resource type and select the game package folder, `files`, or `AssetBundles`. For example, select `com.bilibili.azurlane/files/AssetBundles` so that sibling resource folders can be found.
 3. Search for a skin, select it, choose an output directory and start the task. Expand a result to see missing assets or conversion issues.
 
-For Live2D, open the generated `<skin>.model3.json` in Cubism Viewer. The exporter keeps the serialized clips in `AnimationClip/` and writes supported parameter and part-opacity curves to `motions/*.motion3.json`. Version 2.1 also exports model opacity and supported eye/mouth controller curves. Source paths with no matching target are recorded in `manifest.json`, with path and property hashes for diagnosis. The game’s touch rules, voice menus and EX Studio interactions require separate configuration.
+For Live2D, open the generated `<skin>.model3.json` in Cubism Viewer. The exporter keeps the serialized clips in `AnimationClip/` and writes supported parameter and part-opacity curves to `motions/*.motion3.json`. It also exports model opacity and supported eye/mouth controller curves. Source paths with no matching target are recorded in `manifest.json`, with path and property hashes for diagnosis. The game’s touch rules, voice menus and EX Studio interactions require separate configuration.
 
 ### Command line
 
@@ -34,7 +34,7 @@ Other asset types include `painting`, `spine`, `background`, and `startup`. Run 
 
 ## 碧蓝航线立绘还原工具
 
-从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。**软件免费，请勿付费购买。** [下载 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases) · [更新记录](CHANGELOG.md)
+从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。当前源码版本为 v2.2。**软件免费，请勿付费购买。** [下载 v2.1 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases) · [更新记录](CHANGELOG.md)
 
 1. 完整解压 ZIP，双击 `PaintingRestore.exe`。保留同目录的 `_internal` 文件夹，无需另装 Python。
 2. 在首页选择资源类型，拖入游戏包根目录、`files` 或 `AssetBundles`。目录示例为 `com.bilibili.azurlane/files/AssetBundles`。
@@ -48,7 +48,7 @@ Other asset types include `painting`, `spine`, `background`, and `startup`. Run 
 | Spine | 骨骼、图集描述及贴图。按模型引用从共享资源包提取所选变体的素材。 |
 | Live2D | `.moc3`、贴图、原始 `.animclip.bin` 和转换后的 `.motion3.json`。模型和贴图索引完整时生成 `.model3.json` 入口，物理、姿势、表情及遮罩按资源提供。 |
 
-要预览 Live2D，请在 Cubism Viewer 中打开导出目录里的 `<皮肤名>.model3.json`。2.1 支持模型透明度及可匹配的眨眼、口型轨道。清单分别记录源模型无对应目标、无绑定动作和未解决的转换问题，并保留原始动作。游戏点击、拖动、语音菜单及 EX Studio 互动需另外配置。命令行参数见上方示例或 `PaintingRestore-CLI.exe --help`。
+要预览 Live2D，请在 Cubism Viewer 中打开导出目录里的 `<皮肤名>.model3.json`。动作导出支持模型透明度及可匹配的眨眼、口型轨道。清单分别记录源模型无对应目标、无绑定动作和未解决的转换问题，并保留原始动作。游戏点击、拖动、语音菜单及 EX Studio 互动需另外配置。命令行参数见上方示例或 `PaintingRestore-CLI.exe --help`。
 
 ### Run from source / 从源码运行
 
@@ -63,9 +63,9 @@ python al_restore.py --gui
 
 ### License / 使用许可
 
-Project-owned code and documentation in this checkout are licensed for non-commercial study and research. Each published release comes with its own license terms.
+The v2.2 project license permits personal, non-commercial use of the tool. Game files and game content in exported results are subject to applicable laws, service terms and rights holders’ permissions.
 
-当前源码的自有代码和文档采用非商业学习研究许可。历史发布版适用各版本随附的许可。
+v2.2 的项目许可允许个人非商业使用工具。游戏资源及导出内容中包含的游戏素材，适用相关法律、游戏服务协议和权利人的授权。
 
 [Project license / 许可全文](LICENSE)
 
