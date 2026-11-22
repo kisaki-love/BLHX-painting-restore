@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tasks import execute, Job, publish
+from painting_restore.tasks import Job, execute, publish
 
 
 class Transactions(unittest.TestCase):
@@ -19,7 +19,7 @@ class Transactions(unittest.TestCase):
                 cancel.append(True)
                 stage("保存表情 1")
             job=Job(Path(folder)/"resources",out,("ship","next"))
-            with patch("tasks.process",side_effect=work):
+            with patch("painting_restore.tasks.process", side_effect=work):
                 results=execute(job,stopped=lambda: bool(cancel))
             self.assertEqual([r.status for r in results],["取消","取消"])
             self.assertEqual((old/"ship.png").read_bytes(),b"previous")

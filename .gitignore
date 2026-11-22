@@ -10,6 +10,8 @@ venv/
 素材缺失清单.txt
 
 # 输出
+/build/
+/dist/
 output/
 还原输出/
 分层输出/

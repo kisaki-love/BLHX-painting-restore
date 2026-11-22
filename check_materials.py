@@ -19,14 +19,15 @@
 import argparse
 import os
 import sys
+from pathlib import Path
+
+import UnityPy
+
+from painting_restore.tasks import Job, choose, execute, locate
+
+UnityPy.config.FALLBACK_UNITY_VERSION = "2022.3.0"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
-import UnityPy  # noqa: E402
-UnityPy.config.FALLBACK_UNITY_VERSION = "2022.3.0"
-from pathlib import Path
-from tasks import Job, locate, choose, execute  # noqa: E402
-
 SAVED = os.path.join(HERE, "素材路径.txt")
 
 

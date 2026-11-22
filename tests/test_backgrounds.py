@@ -1,8 +1,9 @@
 from pathlib import Path
 import tempfile
 import unittest
-from dynamic_assets import catalog
-from tasks import choose, locate, publish
+
+from painting_restore.dynamic_assets import catalog
+from painting_restore.tasks import choose, locate, publish
 
 
 class BackgroundCatalogTest(unittest.TestCase):

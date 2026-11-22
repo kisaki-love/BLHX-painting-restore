@@ -12,8 +12,8 @@ from uuid import uuid4
 import os
 import re
 
-import rendering as engine
-import dynamic_assets
+from . import dynamic_assets
+from . import rendering as engine
 
 
 IMPORT_EXAMPLE = "目录示例：com.bilibili.azurlane / files / AssetBundles"

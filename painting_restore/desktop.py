@@ -17,9 +17,10 @@ from PySide6.QtWidgets import (
     QStackedWidget, QProgressBar, QTreeWidget, QTreeWidgetItem, QHeaderView,
     QGraphicsOpacityEffect, QAbstractItemView, QScrollArea, QSizePolicy
 )
-from thumbs import Thumbnails
-import dynamic_assets
-from tasks import IMPORT_EXAMPLE, Job, choose, execute, locate
+
+from . import dynamic_assets
+from .tasks import IMPORT_EXAMPLE, Job, choose, execute, locate
+from .thumbs import Thumbnails
 
 STEPS = ("导入资源", "选择模式", "设置导出", "执行与结果")
 TITLES = ("导入游戏资源", "选择处理模式", "设置输出", "任务进度与结果")
@@ -491,7 +492,7 @@ class Window(QWidget):
         def action(_, stopped):
             root = locate(text)
             catalogs = {k:dynamic_assets.catalog(root,k) for k in dynamic_assets.SOURCES}
-            from rendering import find_paintings
+            from .rendering import find_paintings
             catalogs["painting"] = tuple(find_paintings(str(root/"painting")))
             return root,catalogs
         self.worker_start(action,self.scan_done)

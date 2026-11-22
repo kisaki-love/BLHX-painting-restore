@@ -4,7 +4,8 @@ from pathlib import Path
 from PySide6.QtCore import QPoint, QSize, QTimer, Qt
 from PySide6.QtGui import QIcon, QPixmap, QImage, QColor
 from PIL import Image
-import rendering
+
+from . import rendering
 
 ICON_SIZE = 44
 

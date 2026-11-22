@@ -4,11 +4,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from dataclasses import replace
 from contextlib import ExitStack
-from tasks import Job, execute
 from unittest.mock import patch
 
 from PIL import Image
-import rendering as restore
+
+from painting_restore import rendering as restore
+from painting_restore.tasks import Job, execute
 
 
 class ExpressionExportTest(unittest.TestCase):

@@ -1,6 +1,7 @@
 import unittest
 from types import SimpleNamespace
-from cubism_motion import Bindings, convert, crc
+
+from painting_restore.cubism_motion import Bindings, convert, crc
 
 
 def clip(keys, values, duration=1):

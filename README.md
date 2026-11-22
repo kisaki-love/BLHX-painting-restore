@@ -2,7 +2,7 @@
 
 Restore static illustrations and export Spine or Live2D assets from your local *Azur Lane* game files. Version 2.1 includes a Windows x64 desktop app and a command-line exporter. The interface is in Simplified Chinese.
 
-**[Download the free Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip)** · [Release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.1) · [中文说明](#碧蓝航线立绘还原工具)
+**[Download the free Windows x64 portable ZIP](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip)** · [Release notes](https://github.com/kisaki-love/BLHX-painting-restore/releases/tag/v2.1) · [Changelog](CHANGELOG.md) · [中文说明](#碧蓝航线立绘还原工具)
 
 ![Resource selection in the Windows desktop app](docs/界面.png)
 
@@ -30,11 +30,11 @@ For Live2D, open the generated `<skin>.model3.json` in Cubism Viewer. The export
 .\PaintingRestore-CLI.exe --asset-type live2d --bundles "D:\Game\files\AssetBundles" --out "D:\Exports" --only nabulesi_3
 ```
 
-Other asset types: `painting`, `spine`, `background`, `startup`. Run `--help` for all options. For a source checkout with Python 3.12, run `python -m pip install -r requirements.txt`, then `python al_restore.py --gui`.
+Other asset types include `painting`, `spine`, `background`, and `startup`. Run `--help` for all options.
 
 ## 碧蓝航线立绘还原工具
 
-从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。**软件免费，请勿付费购买。** [下载 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases)
+从本地《碧蓝航线》资源还原静态立绘，或提取 Spine、Live2D 动态素材。**软件免费，请勿付费购买。** [下载 Windows x64 便携包](https://github.com/kisaki-love/BLHX-painting-restore/releases/download/v2.1/PaintingRestore-v2.1-windows-x64.zip) · [GitHub 更新地址](https://github.com/kisaki-love/BLHX-painting-restore/releases) · [更新记录](CHANGELOG.md)
 
 1. 完整解压 ZIP，双击 `PaintingRestore.exe`。保留同目录的 `_internal` 文件夹，无需另装 Python。
 2. 在首页选择资源类型，拖入游戏包根目录、`files` 或 `AssetBundles`。目录示例为 `com.bilibili.azurlane/files/AssetBundles`。
@@ -50,11 +50,24 @@ Other asset types: `painting`, `spine`, `background`, `startup`. Run `--help` fo
 
 要预览 Live2D，请在 Cubism Viewer 中打开导出目录里的 `<皮肤名>.model3.json`。2.1 支持模型透明度及可匹配的眨眼、口型轨道。清单分别记录源模型无对应目标、无绑定动作和未解决的转换问题，并保留原始动作。游戏点击、拖动、语音菜单及 EX Studio 互动需另外配置。命令行参数见上方示例或 `PaintingRestore-CLI.exe --help`。
 
+### Run from source / 从源码运行
+
+Python 3.12
+
+```sh
+python -m pip install -r requirements.txt
+python al_restore.py --gui
+```
+
+[Application modules / 应用模块](painting_restore/) · [Tests / 测试](tests/) · [Build notes / 构建说明](AGENTS.md)
+
 ### License / 使用许可
 
-New v2.x code and documentation are licensed for non-commercial study and research. Code inherited from v1.2 retains its MIT license. Game artwork belongs to its respective rights holders. The portable download includes third-party notices.
+Project-owned code and documentation in this checkout are licensed for non-commercial study and research. Each published release comes with its own license terms.
 
-自 v2.0 起新增自有代码和文档仅供非商业学习研究。继承自 v1.2 的代码沿用 MIT 许可；游戏素材权利归各权利人。便携包内附第三方许可。[v2.x 许可](LICENSE) · [v1.2 MIT 许可](LICENSE-v1.2-MIT.txt) · [更新记录](CHANGELOG.md)
+当前源码的自有代码和文档采用非商业学习研究许可。历史发布版适用各版本随附的许可。
+
+[Project license / 许可全文](LICENSE)
 
 ### Credits / 致谢
 

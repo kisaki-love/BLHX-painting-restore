@@ -1,8 +1,9 @@
 import argparse
 import sys
 from pathlib import Path
-from rendering import VERSION, restore_unpacked
-from tasks import Job, locate, choose, execute
+
+from painting_restore.rendering import VERSION, restore_unpacked
+from painting_restore.tasks import Job, choose, execute, locate
 
 def main():
     ap = argparse.ArgumentParser(description="碧蓝航线 静态立绘还原工具")
@@ -23,7 +24,7 @@ def main():
     a = ap.parse_args()
 
     if a.gui or len(sys.argv) == 1:
-        from desktop import gui
+        from painting_restore.desktop import gui
         return gui()
     if a.unpacked:
         restore_unpacked(*a.unpacked, only=a.only)

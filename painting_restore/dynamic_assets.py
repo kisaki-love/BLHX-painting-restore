@@ -3,8 +3,7 @@ import json
 from pathlib import Path
 import re
 
-import rendering
-import cubism_motion
+from . import cubism_motion, rendering
 
 SOURCES = {"spine": "spinepainting", "live2d": "live2d", "background": "background", "startup": "startup"}
 IMAGE_DIRS = {"background": ("bg", "loadingbg", "loadingbg_hx", "newloading"),
